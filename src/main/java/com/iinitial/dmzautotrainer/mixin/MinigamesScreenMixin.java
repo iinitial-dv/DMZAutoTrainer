@@ -19,7 +19,9 @@ import com.dragonminez.common.network.C2S.SummonPlayerShadowDummyC2S;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 
+import com.iinitial.dmzautotrainer.client.gui.SettingsScreen;
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -45,7 +47,7 @@ public abstract class MinigamesScreenMixin extends Screen {
 
         settingsButton = new TexturedTextButton.Builder().position(bX, bY).size(bWidth,bHeight).texture(SETTINGS_TEXTURE).textureCoords(0, 0, 0, 0).textureSize(bWidth, bHeight).message(Component.literal("Auto Train Settings"))
                 .onPress(button -> {
-                    System.out.println("Pressed! Yay!");
+                    Minecraft.getInstance().setScreen(new SettingsScreen());
                 })
                 .build();
 
