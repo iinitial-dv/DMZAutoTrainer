@@ -1,4 +1,4 @@
-package com.iinitial.dmzautotrainer.mixins;
+package com.iinitial.dmzautotrainer.mixin;
 
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.MinigamesScreen;
@@ -11,12 +11,19 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(MinigamesScreen.class)
-public abstract class MinigamesScreenMixin extends Screen {
+public abstract class MinigamesScreenMixin {
+
+    static {
+        System.out.println("DMZAutoTrainer: MinigamesScreenMixin loaded");
+    }
+
     private static final ResourceLocation BUTTON_TEXTURE = ResourceLocation.fromNamespaceAndPath("dragonminez", "textures/gui/buttons/menubuttons.png");
     private TexturedTextButton settingsButton;
 
     protected MinigamesScreenMixin(Component title) {
-        super(title);
+        //super(title);
+        super();
+
     }
 
     @Inject(method = "init", at = @At("TAIL"))
@@ -34,6 +41,6 @@ public abstract class MinigamesScreenMixin extends Screen {
                 })
                 .build();
 
-        this.addRenderableWidget(settingsButton);
+        //this.addRenderableWidget(settingsButton);
     }
 }

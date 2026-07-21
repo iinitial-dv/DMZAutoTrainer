@@ -1,4 +1,4 @@
 package com.iinitial.dmzautotrainer.client;
 
-public class AutoTraiiner {
+public class AutoTrainer {
 }
