@@ -4,9 +4,10 @@
   "package": "com.iinitial.dmzautotrainer.mixin",
   "compatibilityLevel": "JAVA_17",
   "refmap": "dmzautotrainer.refmap.json",
-  "mixins": [
+  "client": [
     "MinigamesScreenMixin"
   ],
+  "mixins": [],
   "server": [],
   "injectors": {
     "defaultRequire": 1
