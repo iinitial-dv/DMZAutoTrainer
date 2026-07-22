@@ -4,7 +4,7 @@ A client-side [Minecraft Forge](https://minecraftforge.net/) mod that automates 
 
 ## Features
 
-- **Auto Train** - automatically plays through whichever minigame you select next.
+- **Auto Training** - automatically plays through whichever minigame you select next.
 - **Repeat Training** - once a configurable number of levels are cleared, it will automatically end the run and restart the same minigame, looping indefinitely until you stop it on your own.
 - **Configurable levels-to-complete** - set how many levels should be cleared per run before the loop restarts (1–100).
 - **In-game settings screen** - a settings button is added into the Minigames screen, so you don't need to touch a config file to toggle or change things.
