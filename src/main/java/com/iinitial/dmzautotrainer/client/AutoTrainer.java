@@ -4,10 +4,8 @@ import com.dragonminez.client.gui.character.minigames.*;
 import com.iinitial.dmzautotrainer.client.minigames.*;
 import com.iinitial.dmzautotrainer.common.config.ClientConfig;
 import net.minecraft.client.Minecraft;
-import org.lwjgl.glfw.GLFW;
 
 public class AutoTrainer {
-
     private static boolean repeating = false;
     private static Class<? extends BaseMinigameScreen> repeatingScreenClass = null;
 
@@ -20,10 +18,6 @@ public class AutoTrainer {
         if (mc.screen instanceof BaseMinigameScreen screen) {
             tick(screen);
         } else if (repeating) {
-            if (escapeHeld(mc)) {
-                repeating = false; // real player input — stop the loop
-                return;
-            }
             restartLoop(mc);
         }
     }
@@ -32,7 +26,14 @@ public class AutoTrainer {
         String stage = ((Enum<?>) Reflect.get(screen, "stage")).name();
 
         switch (stage) {
-            case "READY", "FINISHED" -> clickCenter(screen);
+            case "READY" -> clickCenter(screen);
+            case "FINISHED" -> {
+                int levelsCleared = (int) Reflect.get(screen, "levelsCleared");
+                if (levelsCleared < ClientConfig.getLevelsToComplete()) {
+                    repeating = false;
+                }
+                clickCenter(screen);
+            }
             case "PLAYING" -> {
                 if (ClientConfig.getRepeatTraining()) {
                     int levelsCleared = (int) Reflect.get(screen, "levelsCleared");
@@ -74,10 +75,5 @@ public class AutoTrainer {
             repeating = false;
             throw new RuntimeException("Failed to restart minigame for repeat training", e);
         }
-    }
-
-    private static boolean escapeHeld(Minecraft mc) {
-        long window = mc.getWindow().getWindow();
-        return GLFW.glfwGetKey(window, GLFW.GLFW_KEY_ESCAPE) == GLFW.GLFW_PRESS;
     }
 }

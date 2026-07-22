@@ -7,7 +7,6 @@ import org.lwjgl.glfw.GLFW;
 import java.util.List;
 
 public class MemoryAutomation {
-
     public static void tick(MemoryGameScreen screen) {
         String phase = ((Enum<?>) Reflect.get(screen, "memPhase")).name();
         if (!phase.equals("INPUT")) return;

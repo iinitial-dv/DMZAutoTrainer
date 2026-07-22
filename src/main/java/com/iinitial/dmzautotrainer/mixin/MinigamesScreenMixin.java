@@ -23,15 +23,14 @@ public abstract class MinigamesScreenMixin extends Screen {
 
     @Inject(method = "init", at = @At("TAIL"))
     private void addSettingsButton (CallbackInfo ci) {
-        int centerX = this.width / 2;   int centerY = this.height / 2;;
+        int centerX = this.width / 2;   int centerY = this.height / 2;
         int bWidth = 110;               int bHeight = 16;
         int bX = centerX - bWidth;      int bY = 30;
 
         settingsButton = new TexturedTextButton.Builder().position(bX, bY).size(bWidth,bHeight).texture(SETTINGS_TEXTURE).textureCoords(0, 0, 0, 0).textureSize(bWidth, bHeight).message(Component.literal("Auto Train Settings"))
                 .onPress(button -> {
                     Minecraft.getInstance().setScreen(new SettingsScreen());
-                })
-                .build();
+                }).build();
 
         this.addRenderableWidget(settingsButton);
     }

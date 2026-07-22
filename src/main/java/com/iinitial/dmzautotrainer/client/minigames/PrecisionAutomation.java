@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PrecisionAutomation {
-
     public static void tick(PrecisionGameScreen screen) {
         List<?> liveTargets = (List<?>) Reflect.get(screen, "targets");
         List<?> targets = new ArrayList<>(liveTargets);

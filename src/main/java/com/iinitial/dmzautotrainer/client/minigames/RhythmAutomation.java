@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RhythmAutomation {
-
     public static void tick(RythmGameScreen screen) {
         List<?> liveArrows = (List<?>) Reflect.get(screen, "arrows");
         List<?> arrows = new ArrayList<>(liveArrows);

@@ -11,7 +11,6 @@ import net.minecraftforge.fml.common.Mod;
         value = Dist.CLIENT
 )
 public class ClientEvents {
-
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END)
