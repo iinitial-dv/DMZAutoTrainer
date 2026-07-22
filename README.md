@@ -43,6 +43,11 @@ Settings can be changed two ways:
 
 This mod automates gameplay that would normally require manual player input. Use it on singleplayer worlds or servers where this kind of client-side automation is explicitly allowed. Check with server admins before using it anywhere else, as it may violate a server's rules even though it is a client-side mod.
 
+## Acknowledgments
+
+This mod is built entirely on top of [DragonMineZ](https://dragonminez.com) ([GitHub](https://github.com/DragonMineZ/dragonminez)), created by Yuseix and ezShokkoh, with contributions from Bruno, Bati2ra, KyoSleep, JotaJoestar, and Toji71_. DragonMineZ is licensed under the [GNU General Public License v3.0](https://github.com/DragonMineZ/dragonminez/blob/main/LICENSE). See `CREDITS.txt` for full credits.
+
+
 ## License
 
 All Rights Reserved.
