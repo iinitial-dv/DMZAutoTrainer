@@ -24,7 +24,7 @@ import java.util.function.Consumer;
 public class SettingsScreen extends BaseMenuScreen {
     private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath("dragonminez", "textures/gui/menu/menubig.png");
     private static final ResourceLocation STAT_BUTTONS = ResourceLocation.fromNamespaceAndPath("dragonminez", "textures/gui/buttons/characterbuttons.png");
-    private static final String[] SETTINGS = new String[]{"Auto Trainer", "Repeat Training", "Levels to Complete"};
+    private static final String[] SETTINGS = new String[]{"Auto Trainer", "Repeat Training", "Levels To Complete Training"};
     private static final int SETTINGS_ITEM_HEIGHT = 20;
     private static final int MAX_VISIBLE_SETTINGS = 7;
     private int tickCount = 0;
