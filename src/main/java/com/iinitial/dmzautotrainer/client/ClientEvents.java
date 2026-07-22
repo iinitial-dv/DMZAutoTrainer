@@ -1,6 +1,5 @@
 package com.iinitial.dmzautotrainer.client;
 
-import com.dragonminez.client.gui.character.minigames.BaseMinigameScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.TickEvent;
@@ -18,10 +17,6 @@ public class ClientEvents {
         if (event.phase != TickEvent.Phase.END)
             return;
 
-        Minecraft mc = Minecraft.getInstance();
-
-        if (mc.screen instanceof BaseMinigameScreen screen) {
-            System.out.println(screen.getClass().getSimpleName());
-        }
+        AutoTrainer.globalTick(Minecraft.getInstance());
     }
 }
