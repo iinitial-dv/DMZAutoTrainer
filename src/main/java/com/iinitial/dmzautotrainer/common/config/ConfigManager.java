@@ -1,29 +1,67 @@
 package com.iinitial.dmzautotrainer.common.config;
 
-import net.minecraftforge.common.ForgeConfigSpec;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
+import org.apache.commons.io.FileUtils;
+import org.apache.logging.log4j.core.jmx.Server;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.Writer;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class ConfigManager {
-    public static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
-    // values
-    public static final ForgeConfigSpec.BooleanValue ENABLE_AUTO_TRAIN;
-    public static final ForgeConfigSpec.BooleanValue ENABLE_REPEAT_TRAINING;
-    public static final ForgeConfigSpec.IntValue LEVELS_TO_COMPLETE;
+    private final static Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+    private static ClientConfig clientConfig = new  ClientConfig();
+    private static ServerConfig serverConfig =  new  ServerConfig();
 
-    static {
-        BUILDER.push("Settings");
-
-        ENABLE_AUTO_TRAIN      = BUILDER
-                .comment("Enables the automatic training")
-                .define("enableAutoTrainer", false);
-        ENABLE_REPEAT_TRAINING = BUILDER
-                .comment("Enables training looping/auto completion")
-                .define("enableRepeatTraining", true);
-        LEVELS_TO_COMPLETE = BUILDER
-                .comment("Number of training levels before automatically completing")
-                .defineInRange("levelsToComplete", 50, 1, 100);
-
-        BUILDER.pop();
+    public ClientConfig client() {
+        return clientConfig;
     }
 
-    public static final ForgeConfigSpec SPEC = BUILDER.build();
+    public ServerConfig server() {
+        return serverConfig;
+    }
+
+    public static void loadClientConfig(Path dir) {
+        Path file = dir.resolve("dmzautotrainer-client.json");
+        clientConfig = load(file, ClientConfig.class, new ClientConfig());
+        save(file, clientConfig);
+    }
+
+    public static void loadServerConfig(Path dir) {
+        Path file = dir.resolve("dmzautotrainer-server.json");
+        serverConfig = load(file, ServerConfig.class, new ServerConfig());
+        save(file, serverConfig);
+    }
+
+    public static void saveClientConfig(Path dir) {
+        save(dir.resolve("dmzautotrainer-client.json"), clientConfig);
+    }
+
+    public static <T> T load(Path file, Class<T> type, T defaultValues) {
+        try {
+            if (Files.notExists(file)) return defaultValues;
+
+            try (Reader reader = Files.newBufferedReader(file)) {
+                T loaded = GSON.fromJson(reader, type);
+                return loaded !=  null ? loaded : defaultValues;
+            }
+        } catch (IOException | JsonSyntaxException e) {
+            return defaultValues;
+        }
+    }
+
+    private static void save(Path file, Object config) {
+        try {
+            Files.createDirectories(file.getParent());
+            try (Writer writer = Files.newBufferedWriter(file)) {
+                GSON.toJson(config, writer);
+            }
+        } catch (IOException e) {
+
+        }
+    }
 }
