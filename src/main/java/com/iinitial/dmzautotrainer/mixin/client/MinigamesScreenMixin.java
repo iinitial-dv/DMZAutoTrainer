@@ -1,4 +1,4 @@
-package com.iinitial.dmzautotrainer.mixin;
+package com.iinitial.dmzautotrainer.mixin.client;
 
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.MinigamesScreen;

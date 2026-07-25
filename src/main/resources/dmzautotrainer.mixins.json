@@ -5,9 +5,9 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "dmzautotrainer.refmap.json",
   "client": [
-    "MinigamesScreenMixin",
-    "ControlGameScreenMixin",
-    "RythmGameScreenMixin"
+    "client.MinigamesScreenMixin",
+    "client.ControlGameScreenMixin",
+    "client.RythmGameScreenMixin"
   ],
   "mixins": [],
   "server": [],
