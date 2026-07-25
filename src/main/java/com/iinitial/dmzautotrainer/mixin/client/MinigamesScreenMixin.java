@@ -4,7 +4,9 @@ import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.MinigamesScreen;
 import com.dragonminez.client.gui.character.util.BaseMenuScreen;
 import com.iinitial.dmzautotrainer.client.gui.SettingsScreen;
+import com.iinitial.dmzautotrainer.client.session.ClientSessionState;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import org.spongepowered.asm.mixin.Mixin;
@@ -23,9 +25,9 @@ public abstract class MinigamesScreenMixin extends BaseMenuScreen {
 
     @Inject(method = "init", at = @At("TAIL"))
     private void addSettingsButton (CallbackInfo ci) {
-        int centerX = this.getUiWidth() / 2;    int centerY = this.getUiHeight() / 2;
+        int centerX = this.getUiWidth() / 2;
         int bWidth = 110;                       int bHeight = 20;
-        int bX = centerX - bWidth / 2;          int bY = centerY - 120;
+        int bX = centerX - bWidth / 2;          int bY = this.getUiHeight() - 60;
 
         settingsButton = new TexturedTextButton.Builder().position(bX, bY).size(bWidth,bHeight).texture(SETTINGS_TEXTURE).textureCoords(0, 0, 0, 0).textureSize(bWidth, bHeight).message(Component.literal("Auto Train Settings"))
                 .onPress(button -> {
@@ -33,5 +35,21 @@ public abstract class MinigamesScreenMixin extends BaseMenuScreen {
                 }).build();
 
         this.addRenderableWidget(settingsButton);
+    }
+
+    @Inject(method = "render", at = @At("TAIL"))
+    private void renderCooldown(GuiGraphics graphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+        long cooldownSeconds = ClientSessionState.getCooldownSecondsRemaining();
+        if (cooldownSeconds <= 0L) {
+            return;
+        }
+
+        graphics.drawCenteredString(
+                this.font,
+                Component.literal("Training cooldown: " + ClientSessionState.formatDuration(cooldownSeconds)),
+                this.width / 2,
+                this.getUiHeight() - 85,
+                0xFF5555
+        );
     }
 }
