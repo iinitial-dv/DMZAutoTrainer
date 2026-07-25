@@ -3,16 +3,16 @@ package com.iinitial.dmzautotrainer.server.session;
 import com.iinitial.dmzautotrainer.common.config.ConfigManager;
 import com.iinitial.dmzautotrainer.common.config.ServerConfig;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 public final class TrainingSessionManager {
     private TrainingSessionManager() {
     }
 
-    /**
-     * Starts a session when the player has none, or returns the current session/cooldown state.
-     */
     public static SessionStatus requestSession(MinecraftServer server, UUID playerId) {
         ServerConfig config = ConfigManager.server();
         if (!config.isSessionsEnabled()) {
@@ -84,6 +84,49 @@ public final class TrainingSessionManager {
         return coolingDown(cooldownEndsAt, now);
     }
 
+    public static boolean resetCooldown(MinecraftServer server, UUID playerId) {
+        TrainingSessionSavedData data = TrainingSessionSavedData.get(server);
+        PlayerSessionTimes times = data.get(playerId);
+        if (times == null) {
+            return false;
+        }
+
+        if (times.sessionEndsAt() > System.currentTimeMillis()) {
+            data.put(playerId, new PlayerSessionTimes(times.sessionEndsAt(), 0L));
+        } else {
+            data.remove(playerId);
+        }
+        return true;
+    }
+
+    public static void setCooldown(MinecraftServer server, UUID playerId, int cooldownSeconds) {
+        if (cooldownSeconds <= 0) {
+            resetCooldown(server, playerId);
+            return;
+        }
+
+        long cooldownEndsAt = System.currentTimeMillis() + cooldownSeconds * 1_000L;
+        TrainingSessionSavedData.get(server).put(playerId, new PlayerSessionTimes(0L, cooldownEndsAt));
+    }
+
+    public static int resetCooldowns(MinecraftServer server) {
+        int changed = 0;
+        for (UUID playerId : affectedPlayerIds(server)) {
+            if (resetCooldown(server, playerId)) {
+                changed++;
+            }
+        }
+        return changed;
+    }
+
+    public static int setCooldowns(MinecraftServer server, int cooldownSeconds) {
+        Set<UUID> playerIds = affectedPlayerIds(server);
+        for (UUID playerId : playerIds) {
+            setCooldown(server, playerId, cooldownSeconds);
+        }
+        return playerIds.size();
+    }
+
     private static SessionStatus allowedWithoutTimer() {
         return new SessionStatus(true, 0L, 0L);
     }
@@ -102,5 +145,13 @@ public final class TrainingSessionManager {
 
     private static long secondsRemaining(long endsAt, long now) {
         return Math.max(0L, (endsAt - now + 999L) / 1_000L);
+    }
+
+    private static Set<UUID> affectedPlayerIds(MinecraftServer server) {
+        Set<UUID> playerIds = new HashSet<>(TrainingSessionSavedData.get(server).playerIds());
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            playerIds.add(player.getUUID());
+        }
+        return playerIds;
     }
 }

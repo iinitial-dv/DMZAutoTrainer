@@ -2,44 +2,57 @@ package com.iinitial.dmzautotrainer.client.autotrainer;
 
 import com.dragonminez.client.gui.character.minigames.*;
 import com.iinitial.dmzautotrainer.client.minigames.*;
+import com.iinitial.dmzautotrainer.client.session.ClientSessionState;
 import com.iinitial.dmzautotrainer.common.config.ClientConfig;
+import com.iinitial.dmzautotrainer.common.config.ConfigManager;
 import net.minecraft.client.Minecraft;
 
 public class AutoTrainer {
     private static boolean repeating = false;
+    private static boolean wasAutoTrainerEnabled = false;
     private static Class<? extends BaseMinigameScreen> repeatingScreenClass = null;
 
     public static void globalTick(Minecraft mc) {
-        if (!ClientConfig.isAutoTrainEnabled()) {
+        ClientConfig config = ConfigManager.client();
+        if (!config.isAutoTrainEnabled()) {
+            if (wasAutoTrainerEnabled) {
+                ClientSessionState.endSessionEarly();
+            }
+            wasAutoTrainerEnabled = false;
             repeating = false;
             return;
         }
+        wasAutoTrainerEnabled = true;
 
         if (mc.screen instanceof BaseMinigameScreen screen) {
-            tick(screen);
+            if (!ClientSessionState.mayTrain()) {
+                return;
+            }
+            tick(screen, config);
         } else if (repeating) {
             restartLoop(mc);
         }
     }
 
-    private static void tick(BaseMinigameScreen screen) {
+    private static void tick(BaseMinigameScreen screen, ClientConfig config) {
         String stage = ((Enum<?>) Reflect.get(screen, "stage")).name();
 
         switch (stage) {
             case "READY" -> clickCenter(screen);
             case "FINISHED" -> {
                 int levelsCleared = (int) Reflect.get(screen, "levelsCleared");
-                if (levelsCleared < ClientConfig.getLevelsToComplete()) {
+                if (levelsCleared < config.getLevelsToComplete()) {
                     repeating = false;
                 }
                 clickCenter(screen);
             }
             case "PLAYING" -> {
-                if (ClientConfig.isRepeatTrainingEnabled()) {
+                if (config.isRepeatTrainingEnabled()) {
                     int levelsCleared = (int) Reflect.get(screen, "levelsCleared");
-                    if (levelsCleared >= ClientConfig.getLevelsToComplete()) {
+                    if (levelsCleared >= config.getLevelsToComplete()) {
                         repeatingScreenClass = screen.getClass();
                         repeating = true;
+                        ClientSessionState.requestFreshStatus();
                         Reflect.invoke(screen, "endGame");
                         return;
                     }
@@ -68,6 +81,10 @@ public class AutoTrainer {
     }
 
     private static void restartLoop(Minecraft mc) {
+        if (!ClientSessionState.mayTrain()) {
+            return;
+        }
+
         try {
             BaseMinigameScreen fresh = repeatingScreenClass.getDeclaredConstructor().newInstance();
             mc.setScreen(fresh);

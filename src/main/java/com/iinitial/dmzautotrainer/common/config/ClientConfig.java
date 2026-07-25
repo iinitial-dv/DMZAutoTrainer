@@ -1,26 +1,28 @@
 package com.iinitial.dmzautotrainer.common.config;
 
 public final class ClientConfig {
-    public static boolean enableAutoTrain = false;
-    public static boolean enableRepeatTraining = true;
-    public static float   levelsToComplete = 50;
+    public boolean enableAutoTrain = false;
+    public boolean enableRepeatTraining = true;
+    public float levelsToComplete = 50;
 
-    public static boolean isAutoTrainEnabled() { return enableAutoTrain; }
+    public boolean isAutoTrainEnabled() { return enableAutoTrain; }
 
-    public static boolean isRepeatTrainingEnabled() { return enableRepeatTraining; }
+    public boolean isRepeatTrainingEnabled() { return enableRepeatTraining; }
 
-    public static float   getLevelsToComplete() { return levelsToComplete; }
+    public float getLevelsToComplete() { return levelsToComplete; }
 
-    public static void setAutoTrain(boolean autoTrain) {
+    public void setAutoTrain(boolean autoTrain) {
         enableAutoTrain = autoTrain;
         ConfigManager.saveClientConfig();
     }
 
-    public static void setRepeatTraining(boolean repeatTraining) {
+    public void setRepeatTraining(boolean repeatTraining) {
         enableRepeatTraining = repeatTraining;
+        ConfigManager.saveClientConfig();
     }
 
-    public static void setLevelsToComplete(float levels) {
+    public void setLevelsToComplete(float levels) {
         levelsToComplete = levels;
+        ConfigManager.saveClientConfig();
     }
 }

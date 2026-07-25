@@ -7,6 +7,7 @@ import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.init.MainSounds;
 import com.iinitial.dmzautotrainer.common.config.ClientConfig;
+import com.iinitial.dmzautotrainer.common.config.ConfigManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
@@ -50,9 +51,10 @@ public class SettingsScreen extends BaseMenuScreen {
 
     private void initializeSettingsOptions() {
         this.settingsOptions.clear();
-        this.settingsOptions.add(new SettingsScreen.SettingsOption("enableAutoTrainer", SettingsType.BOOLEAN, ClientConfig.isAutoTrainEnabled() ? 1.0F : 0.0F, 0.0F, 1.0F, (v) -> ClientConfig.setAutoTrain(v > 0.0F)));
-        this.settingsOptions.add(new SettingsScreen.SettingsOption("enableRepeatTraining", SettingsType.BOOLEAN, ClientConfig.isRepeatTrainingEnabled() ? 1.0F : 0.0F, 0.0F, 1.0F, (v) -> ClientConfig.setRepeatTraining(v > 0.0F)));
-        this.settingsOptions.add(new SettingsScreen.SettingsOption("levelsToComplete", SettingsType.INT, ClientConfig.getLevelsToComplete(), 1, 100, ClientConfig::setLevelsToComplete));
+        ClientConfig config = ConfigManager.client();
+        this.settingsOptions.add(new SettingsScreen.SettingsOption("enableAutoTrainer", SettingsType.BOOLEAN, config.isAutoTrainEnabled() ? 1.0F : 0.0F, 0.0F, 1.0F, (v) -> config.setAutoTrain(v > 0.0F)));
+        this.settingsOptions.add(new SettingsScreen.SettingsOption("enableRepeatTraining", SettingsType.BOOLEAN, config.isRepeatTrainingEnabled() ? 1.0F : 0.0F, 0.0F, 1.0F, (v) -> config.setRepeatTraining(v > 0.0F)));
+        this.settingsOptions.add(new SettingsScreen.SettingsOption("levelsToComplete", SettingsType.INT, config.getLevelsToComplete(), 1, 100, config::setLevelsToComplete));
     }
 
     private void initSettingsButtons() {
