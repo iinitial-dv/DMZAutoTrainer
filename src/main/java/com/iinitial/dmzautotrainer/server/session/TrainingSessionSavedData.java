@@ -61,4 +61,10 @@ public class TrainingSessionSavedData extends SavedData {
         players.put(uuid, times);
         setDirty();
     }
+
+    public void remove(UUID uuid) {
+        if (players.remove(uuid) != null) {
+            setDirty();
+        }
+    }
 }
