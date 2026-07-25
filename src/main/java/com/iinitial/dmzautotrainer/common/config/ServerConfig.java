@@ -1,14 +1,14 @@
 package com.iinitial.dmzautotrainer.common.config;
 
 public class ServerConfig {
-    public static boolean enableSessions = false;
+    public boolean enableSessions = false;
     // durations in seconds
-    public static int     sessionDuration = 900;
-    public static int     sessionCooldown = 900;
+    public int sessionDuration = 900;
+    public int sessionCooldown = 900;
 
-    public static boolean getSessionsEnabled () { return enableSessions; }
+    public boolean isSessionsEnabled() { return enableSessions; }
 
-    public static int     getSessionDuration () { return sessionDuration; }
+    public int getSessionDuration() { return sessionDuration; }
 
-    public static int     getSessionCooldown () { return sessionCooldown; }
+    public int getSessionCooldown() { return sessionCooldown; }
 }

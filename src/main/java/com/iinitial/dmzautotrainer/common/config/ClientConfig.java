@@ -1,15 +1,13 @@
 package com.iinitial.dmzautotrainer.common.config;
 
-import java.io.ObjectInputFilter;
-
 public final class ClientConfig {
     public static boolean enableAutoTrain = false;
     public static boolean enableRepeatTraining = true;
     public static float   levelsToComplete = 50;
 
-    public static boolean getAutoTrain() { return enableAutoTrain; }
+    public static boolean isAutoTrainEnabled() { return enableAutoTrain; }
 
-    public static boolean getRepeatTraining() { return enableRepeatTraining; }
+    public static boolean isRepeatTrainingEnabled() { return enableRepeatTraining; }
 
     public static float   getLevelsToComplete() { return levelsToComplete; }
 
