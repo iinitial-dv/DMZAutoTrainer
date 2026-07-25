@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public class TrainingSessionSavedData extends SavedData {
@@ -66,5 +67,9 @@ public class TrainingSessionSavedData extends SavedData {
         if (players.remove(uuid) != null) {
             setDirty();
         }
+    }
+
+    public Set<UUID> playerIds() {
+        return Set.copyOf(players.keySet());
     }
 }
