@@ -69,9 +69,6 @@ public abstract class MinigamesScreenMixin extends BaseMenuScreen {
     @Inject(method = "render", at = @At("TAIL"))
     private void renderCooldown(GuiGraphics graphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
         long cooldownSeconds = ClientSessionState.getCooldownSecondsRemaining();
-        if (cooldownSeconds <= 0L) {
-            return;
-        }
 
         int leftOffset = this.getLeftPanelSwitchOffset(partialTick);
         int panelCenterX = LEFT_PANEL_X + PANEL_WIDTH / 2;
@@ -81,14 +78,22 @@ public abstract class MinigamesScreenMixin extends BaseMenuScreen {
         this.beginUiScale(graphics);
         graphics.pose().pushPose();
         graphics.pose().translate((float) leftOffset, 0.0F, 0.0F);
-        TextUtil.drawCenteredStringWithBorder(
-                graphics,
-                this.font,
-                this.txt("On Cooldown for " + ClientSessionState.formatDuration(cooldownSeconds)),
-                panelCenterX,
-                panelY + PANEL_HEIGHT - 40,
-                0xFF5555
-        );
+
+        if (cooldownSeconds > 0L) {
+            TextUtil.drawCenteredStringWithBorder(
+                    graphics, this.font, this.txt("On Cooldown..."),
+                    panelCenterX, panelY + PANEL_HEIGHT - 50, 0xFF5555
+            );
+            TextUtil.drawCenteredStringWithBorder(
+                    graphics, this.font, this.txt(ClientSessionState.formatDuration(cooldownSeconds)),
+                    panelCenterX, panelY + PANEL_HEIGHT - 40, 0xFF5555
+            );
+        } else {
+            TextUtil.drawCenteredStringWithBorder(
+                    graphics, this.font, this.txt("Cooldown Lifted!"),
+                    panelCenterX, panelY + PANEL_HEIGHT - 40, 0x55FF55
+            );
+        }
         graphics.pose().popPose();
         this.endUiScale(graphics);
     }

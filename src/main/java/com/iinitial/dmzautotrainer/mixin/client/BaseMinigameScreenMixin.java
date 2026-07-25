@@ -1,6 +1,7 @@
 package com.iinitial.dmzautotrainer.mixin.client;
 
 import com.dragonminez.client.gui.character.minigames.BaseMinigameScreen;
+import com.dragonminez.client.util.TextUtil;
 import com.iinitial.dmzautotrainer.client.session.ClientSessionState;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -34,11 +35,12 @@ public abstract class BaseMinigameScreenMixin extends Screen {
             return;
         }
 
-        graphics.drawCenteredString(
+        TextUtil.drawCenteredStringWithBorder(
+                graphics,
                 this.font,
                 Component.literal("Training time remaining: " + ClientSessionState.formatDuration(sessionSeconds)),
                 this.width / 2,
-                62,
+                this.height - 30,
                 0xFFD54F
         );
     }
