@@ -64,6 +64,10 @@ public final class ClientSessionState {
         return String.format("%d:%02d", seconds / 60L, seconds % 60L);
     }
 
+    public static void syncStatus() {
+        requestStatusIfDue();
+    }
+
     private static void requestStatusIfDue() {
         long now = System.currentTimeMillis();
         if (awaitingServerResponse || now < nextRequestAt) {

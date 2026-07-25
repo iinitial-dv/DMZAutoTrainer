@@ -25,6 +25,8 @@ public abstract class MinigamesScreenMixin extends BaseMenuScreen {
 
     @Inject(method = "init", at = @At("TAIL"))
     private void addSettingsButton (CallbackInfo ci) {
+        ClientSessionState.syncStatus();
+
         int centerX = this.getUiWidth() / 2;
         int bWidth = 110;                       int bHeight = 20;
         int bX = centerX - bWidth / 2;          int bY = this.getUiHeight() - 60;
