@@ -28,20 +28,27 @@ public abstract class BaseMinigameScreenMixin extends Screen {
     }
 
     @Inject(method = "render", at = @At("TAIL"))
-    private void renderSessionTimer(GuiGraphics graphics, int mouseX, int mouseY, float partialTick,
-                                    CallbackInfo ci) {
+    private void renderSessionTimer(GuiGraphics graphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
         long sessionSeconds = ClientSessionState.getSessionSecondsRemaining();
-        if (sessionSeconds <= 0L) {
-            return;
-        }
 
-        TextUtil.drawCenteredStringWithBorder(
-                graphics,
-                this.font,
-                Component.literal("Training time remaining: " + ClientSessionState.formatDuration(sessionSeconds)),
-                this.width / 2,
-                this.height - 30,
-                0xFFD54F
-        );
+        if (sessionSeconds > 0L) {
+            TextUtil.drawCenteredStringWithBorder(
+                    graphics,
+                    this.font,
+                    Component.literal("Training time remaining: " + ClientSessionState.formatDuration(sessionSeconds)),
+                    this.width / 2,
+                    this.height - 30,
+                    0xFFD54F
+            );
+        } else if (ClientSessionState.isSessionExpired()) {
+            TextUtil.drawCenteredStringWithBorder(
+                    graphics,
+                    this.font,
+                    Component.literal("The auto trainer will stop after this minigame ends."),
+                    this.width / 2,
+                    this.height - 30,
+                    0xFFD54F
+            );
+        }
     }
 }
