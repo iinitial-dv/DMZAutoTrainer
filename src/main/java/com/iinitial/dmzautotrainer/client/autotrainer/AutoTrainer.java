@@ -11,26 +11,30 @@ public class AutoTrainer {
     private static boolean repeating = false;
     private static boolean wasAutoTrainerEnabled = false;
     private static Class<? extends BaseMinigameScreen> repeatingScreenClass = null;
+    private static boolean pendingRestart = false;
 
     public static void globalTick(Minecraft mc) {
         ClientConfig config = ConfigManager.client();
         if (!config.isAutoTrainEnabled()) {
-            if (wasAutoTrainerEnabled) {
-                ClientSessionState.endSessionEarly();
-            }
-            wasAutoTrainerEnabled = false;
             repeating = false;
+            pendingRestart = false;
             return;
         }
-        wasAutoTrainerEnabled = true;
 
         if (mc.screen instanceof BaseMinigameScreen screen) {
-            if (!ClientSessionState.mayTrain()) {
-                return;
-            }
             tick(screen, config);
-        } else if (repeating) {
-            restartLoop(mc);
+        } else if (pendingRestart) {
+            pendingRestart = false;
+            repeating = false;
+            if (ClientSessionState.mayTrain()) {
+                try {
+                    BaseMinigameScreen fresh = repeatingScreenClass.getDeclaredConstructor().newInstance();
+                    mc.setScreen(fresh);
+                    repeating = true;
+                } catch (Exception e) {
+                    throw new RuntimeException("Failed to restart minigame for repeat training", e);
+                }
+            }
         }
     }
 
@@ -78,19 +82,5 @@ public class AutoTrainer {
 
     private static void clickCenter(BaseMinigameScreen screen) {
         screen.mouseClicked(screen.width / 2.0, screen.height / 2.0, 0);
-    }
-
-    private static void restartLoop(Minecraft mc) {
-        if (!ClientSessionState.mayTrain()) {
-            return;
-        }
-
-        try {
-            BaseMinigameScreen fresh = repeatingScreenClass.getDeclaredConstructor().newInstance();
-            mc.setScreen(fresh);
-        } catch (Exception e) {
-            repeating = false;
-            throw new RuntimeException("Failed to restart minigame for repeat training", e);
-        }
     }
 }
