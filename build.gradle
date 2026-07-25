@@ -38,9 +38,15 @@ minecraft {
             }
         }
 
-        client {}
-        client2 {}
-        server {}
+        client {
+            workingDirectory project.file('run/client')
+        }
+        client2 {
+            workingDirectory project.file('run/client2')
+        }
+        server {
+            workingDirectory project.file('run/server')
+        }
 
         gameTestServer {
             property 'forge.enabledGameTestNamespaces', mod_id
