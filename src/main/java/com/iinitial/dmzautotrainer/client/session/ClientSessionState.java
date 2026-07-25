@@ -60,8 +60,11 @@ public final class ClientSessionState {
         return secondsRemaining(cooldownEndsAt);
     }
 
-    public static String formatDuration(long seconds) {
-        return String.format("%d:%02d", seconds / 60L, seconds % 60L);
+    public static String formatDuration(long totalSeconds) {
+        long hours = totalSeconds / 3600L;
+        long minutes = (totalSeconds % 3600L) / 60L;
+        long seconds = totalSeconds % 60L;
+        return String.format("%02d:%02d:%02d", hours, minutes, seconds);
     }
 
     public static void syncStatus() {
