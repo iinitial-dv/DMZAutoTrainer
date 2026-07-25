@@ -3,6 +3,7 @@ package com.iinitial.dmzautotrainer.mixin.client;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.MinigamesScreen;
 import com.dragonminez.client.gui.character.util.BaseMenuScreen;
+import com.dragonminez.client.util.TextUtil;
 import com.iinitial.dmzautotrainer.client.gui.SettingsScreen;
 import com.iinitial.dmzautotrainer.client.session.ClientSessionState;
 import net.minecraft.client.Minecraft;
@@ -46,12 +47,15 @@ public abstract class MinigamesScreenMixin extends BaseMenuScreen {
             return;
         }
 
-        graphics.drawCenteredString(
+        this.beginUiScale(graphics);
+        TextUtil.drawCenteredStringWithBorder(
+                graphics,
                 this.font,
-                Component.literal("Training cooldown: " + ClientSessionState.formatDuration(cooldownSeconds)),
-                this.width / 2,
-                this.getUiHeight() - 85,
+                this.txt("On Cooldown for " + ClientSessionState.formatDuration(cooldownSeconds)),
+                this.getUiWidth() / 2,
+                this.getUiHeight() - 80,
                 0xFF5555
         );
+        this.endUiScale(graphics);
     }
 }
