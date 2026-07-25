@@ -10,20 +10,20 @@ import net.minecraftforge.network.PacketDistributor;
 
 import java.util.function.Supplier;
 
-public final class RequestTrainingSessionC2SPacket {
-    public static void encode(RequestTrainingSessionC2SPacket message, FriendlyByteBuf buffer) {
+public final class EndTrainingSessionC2SPacket {
+    public static void encode(EndTrainingSessionC2SPacket message, FriendlyByteBuf buffer) {
     }
 
-    public static RequestTrainingSessionC2SPacket decode(FriendlyByteBuf buffer) {
-        return new RequestTrainingSessionC2SPacket();
+    public static EndTrainingSessionC2SPacket decode(FriendlyByteBuf buffer) {
+        return new EndTrainingSessionC2SPacket();
     }
 
-    public static void handle(RequestTrainingSessionC2SPacket message, Supplier<NetworkEvent.Context> contextSupplier) {
+    public static void handle(EndTrainingSessionC2SPacket message, Supplier<NetworkEvent.Context> contextSupplier) {
         NetworkEvent.Context context = contextSupplier.get();
         ServerPlayer player = context.getSender();
 
         if (player != null) {
-            SessionStatus status = TrainingSessionManager.requestSession(player.server, player.getUUID());
+            SessionStatus status = TrainingSessionManager.endSessionEarly(player.server, player.getUUID());
             NetworkHandler.CHANNEL.send(
                     PacketDistributor.PLAYER.with(() -> player),
                     new SessionStatusS2CPacket(status)
