@@ -18,6 +18,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(MinigamesScreen.class)
 public abstract class MinigamesScreenMixin extends BaseMenuScreen {
     private static final ResourceLocation SETTINGS_TEXTURE = ResourceLocation.fromNamespaceAndPath("dmzautotrainer", "textures/gui/buttons/settingsbutton.png");
+    private static final int LEFT_PANEL_X = 12;
+    private static final int PANEL_WIDTH = 141;
+    private static final int PANEL_HEIGHT = 213;
+    private static final int BUTTON_WIDTH = 110;
+    private static final int BUTTON_HEIGHT = 20;
+
     private TexturedTextButton settingsButton;
 
     protected MinigamesScreenMixin(Component title) {
@@ -25,19 +31,39 @@ public abstract class MinigamesScreenMixin extends BaseMenuScreen {
     }
 
     @Inject(method = "init", at = @At("TAIL"))
-    private void addSettingsButton (CallbackInfo ci) {
+    private void addSettingsButton(CallbackInfo ci) {
         ClientSessionState.syncStatus();
 
-        int centerX = this.getUiWidth() / 2;
-        int bWidth = 110;                       int bHeight = 20;
-        int bX = centerX - bWidth / 2;          int bY = this.getUiHeight() - 60;
+        int panelCenterX = LEFT_PANEL_X + PANEL_WIDTH / 2;
+        int centerY = this.getUiHeight() / 2;
+        int panelY = centerY - 105;
+        int bX = panelCenterX - BUTTON_WIDTH / 2;
+        int bY = panelY + PANEL_HEIGHT - 30;
 
-        settingsButton = new TexturedTextButton.Builder().position(bX, bY).size(bWidth,bHeight).texture(SETTINGS_TEXTURE).textureCoords(0, 0, 0, 0).textureSize(bWidth, bHeight).message(Component.literal("Auto Train Settings"))
-                .onPress(button -> {
-                    Minecraft.getInstance().setScreen(new SettingsScreen());
-                }).build();
+        settingsButton = new TexturedTextButton.Builder()
+                .position(bX, bY)
+                .size(BUTTON_WIDTH, BUTTON_HEIGHT)
+                .texture(SETTINGS_TEXTURE)
+                .textureCoords(0, 0, 0, 0)
+                .textureSize(BUTTON_WIDTH, BUTTON_HEIGHT)
+                .message(Component.literal("Auto Train Settings"))
+                .onPress(button -> Minecraft.getInstance().setScreen(new SettingsScreen()))
+                .build();
 
         this.addRenderableWidget(settingsButton);
+    }
+
+    @Inject(method = "render", at = @At("HEAD"))
+    private void slideSettingsButton(GuiGraphics graphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+        if (this.settingsButton == null) return;
+
+        int leftOffset = this.getLeftPanelSwitchOffset(partialTick);
+        int panelCenterX = LEFT_PANEL_X + PANEL_WIDTH / 2;
+        int centerY = this.getUiHeight() / 2;
+        int panelY = centerY - 105;
+
+        this.settingsButton.setX(panelCenterX - BUTTON_WIDTH / 2 + leftOffset);
+        this.settingsButton.setY(panelY + PANEL_HEIGHT - 30);
     }
 
     @Inject(method = "render", at = @At("TAIL"))
@@ -47,15 +73,23 @@ public abstract class MinigamesScreenMixin extends BaseMenuScreen {
             return;
         }
 
+        int leftOffset = this.getLeftPanelSwitchOffset(partialTick);
+        int panelCenterX = LEFT_PANEL_X + PANEL_WIDTH / 2;
+        int centerY = this.getUiHeight() / 2;
+        int panelY = centerY - 105;
+
         this.beginUiScale(graphics);
+        graphics.pose().pushPose();
+        graphics.pose().translate((float) leftOffset, 0.0F, 0.0F);
         TextUtil.drawCenteredStringWithBorder(
                 graphics,
                 this.font,
                 this.txt("On Cooldown for " + ClientSessionState.formatDuration(cooldownSeconds)),
-                this.getUiWidth() / 2,
-                this.getUiHeight() - 80,
+                panelCenterX,
+                panelY + PANEL_HEIGHT - 40,
                 0xFF5555
         );
+        graphics.pose().popPose();
         this.endUiScale(graphics);
     }
 }
