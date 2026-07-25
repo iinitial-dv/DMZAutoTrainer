@@ -10,7 +10,7 @@ public class AutoTrainer {
     private static Class<? extends BaseMinigameScreen> repeatingScreenClass = null;
 
     public static void globalTick(Minecraft mc) {
-        if (!ClientConfig.getAutoTrain()) {
+        if (!ClientConfig.isAutoTrainEnabled()) {
             repeating = false;
             return;
         }
@@ -35,7 +35,7 @@ public class AutoTrainer {
                 clickCenter(screen);
             }
             case "PLAYING" -> {
-                if (ClientConfig.getRepeatTraining()) {
+                if (ClientConfig.isRepeatTrainingEnabled()) {
                     int levelsCleared = (int) Reflect.get(screen, "levelsCleared");
                     if (levelsCleared >= ClientConfig.getLevelsToComplete()) {
                         repeatingScreenClass = screen.getClass();

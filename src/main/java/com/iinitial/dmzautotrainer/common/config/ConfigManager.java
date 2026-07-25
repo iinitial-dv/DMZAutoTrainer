@@ -16,11 +16,11 @@ public class ConfigManager {
     private static ClientConfig clientConfig = new  ClientConfig();
     private static ServerConfig serverConfig =  new  ServerConfig();
 
-    public ClientConfig client() {
+    public static ClientConfig client() {
         return clientConfig;
     }
 
-    public ServerConfig server() {
+    public static ServerConfig server() {
         return serverConfig;
     }
 
