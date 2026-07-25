@@ -10,6 +10,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public final class ClientSessionState {
     private static boolean awaitingServerResponse;
+    private static boolean sessionTimerActive = false;
     private static boolean allowed;
     private static long nextRequestAt;
     private static long sessionEndsAt;
@@ -47,9 +48,14 @@ public final class ClientSessionState {
         long now = System.currentTimeMillis();
         awaitingServerResponse = false;
         allowed = status.allowed();
+        sessionTimerActive = status.sessionSecondsRemaining() > 0L;
         sessionEndsAt = now + status.sessionSecondsRemaining() * 1_000L;
         cooldownEndsAt = now + status.cooldownSecondsRemaining() * 1_000L;
         nextRequestAt = allowed ? 0L : now + 1_000L;
+    }
+
+    public static boolean isSessionExpired() {
+        return sessionTimerActive && System.currentTimeMillis() >= sessionEndsAt;
     }
 
     public static long getSessionSecondsRemaining() {

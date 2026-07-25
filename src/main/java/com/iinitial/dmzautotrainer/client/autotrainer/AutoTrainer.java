@@ -11,6 +11,7 @@ public class AutoTrainer {
     private static boolean repeating = false;
     private static boolean wasAutoTrainerEnabled = false;
     private static boolean pendingRestart = false;
+    private static boolean sessionExpiredThisRun = false;
     private static Class<? extends BaseMinigameScreen> repeatingScreenClass = null;
 
     public static void globalTick(Minecraft mc) {
@@ -22,6 +23,7 @@ public class AutoTrainer {
             wasAutoTrainerEnabled = false;
             repeating = false;
             pendingRestart = false;
+            sessionExpiredThisRun = false;
             return;
         }
         wasAutoTrainerEnabled = true;
@@ -30,7 +32,15 @@ public class AutoTrainer {
             if (!ClientSessionState.mayTrain()) {
                 return;
             }
+            if (ClientSessionState.isSessionExpired()) {
+                sessionExpiredThisRun = true;
+            }
             tick(screen, config);
+        } else if (sessionExpiredThisRun) {
+            sessionExpiredThisRun = false;
+            pendingRestart = false;
+            repeating = false;
+            ClientSessionState.endSessionEarly();
         } else if (pendingRestart) {
             pendingRestart = false;
             repeating = false;
@@ -59,11 +69,16 @@ public class AutoTrainer {
                 clickCenter(screen);
             }
             case "PLAYING" -> {
+                if (ClientSessionState.isSessionExpired()) {
+                    sessionExpiredThisRun = true;
+                }
                 if (config.isRepeatTrainingEnabled()) {
                     int levelsCleared = (int) Reflect.get(screen, "levelsCleared");
                     if (levelsCleared >= config.getLevelsToComplete()) {
+                        boolean shouldLoop = !ClientSessionState.isSessionExpired();
                         repeatingScreenClass = screen.getClass();
-                        repeating = true;
+                        repeating = shouldLoop;
+                        pendingRestart = shouldLoop;
                         ClientSessionState.requestFreshStatus();
                         Reflect.invoke(screen, "endGame");
                         return;
