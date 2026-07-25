@@ -1,6 +1,6 @@
 package com.iinitial.dmzautotrainer.server.session;
 
-public record SessionTimes (
+public record PlayerSessionTimes(
         long sessionEndsAt,
         long cooldownEndsAt
 ) { }

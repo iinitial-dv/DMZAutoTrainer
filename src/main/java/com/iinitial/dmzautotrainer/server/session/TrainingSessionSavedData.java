@@ -13,7 +13,7 @@ import java.util.UUID;
 
 public class TrainingSessionSavedData extends SavedData {
     private static final String DATA_NAME = "dmzautotrainer_sessions";
-    private final Map<UUID, SessionTimes> players = new HashMap<>();
+    private final Map<UUID, PlayerSessionTimes> players = new HashMap<>();
 
     public static TrainingSessionSavedData get(MinecraftServer server) {
         return server.overworld().getDataStorage().computeIfAbsent(
@@ -33,7 +33,7 @@ public class TrainingSessionSavedData extends SavedData {
             long sessionEndsAt = playerTag.getLong("sessionEndsAt");
             long cooldownEndsAt = playerTag.getLong("cooldownEndsAt");
 
-            data.players.put(uuid, new SessionTimes(sessionEndsAt, cooldownEndsAt));
+            data.players.put(uuid, new PlayerSessionTimes(sessionEndsAt, cooldownEndsAt));
         }
         return data;
     }
@@ -42,7 +42,7 @@ public class TrainingSessionSavedData extends SavedData {
     public @NotNull CompoundTag save(@NotNull CompoundTag tag) {
         ListTag entries = new ListTag();
 
-        for (Map.Entry<UUID, SessionTimes> entry : players.entrySet()) {
+        for (Map.Entry<UUID, PlayerSessionTimes> entry : players.entrySet()) {
             CompoundTag playerTag = new CompoundTag();
             playerTag.putUUID("uuid", entry.getKey());
             playerTag.putLong("sessionEndsAt", entry.getValue().sessionEndsAt());
@@ -53,11 +53,11 @@ public class TrainingSessionSavedData extends SavedData {
         return tag;
     }
 
-    public SessionTimes get(UUID uuid) {
+    public PlayerSessionTimes get(UUID uuid) {
         return players.get(uuid);
     }
 
-    public void put(UUID uuid, SessionTimes times) {
+    public void put(UUID uuid, PlayerSessionTimes times) {
         players.put(uuid, times);
         setDirty();
     }
