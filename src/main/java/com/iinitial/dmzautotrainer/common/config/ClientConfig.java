@@ -11,8 +11,7 @@ public final class ClientConfig {
 
     public static boolean getRepeatTraining() { return enableRepeatTraining; }
 
-    public static float getLevelsToComplete() { return levelsToComplete; }
-
+    public static float   getLevelsToComplete() { return levelsToComplete; }
 
     public static void setAutoTrain(boolean autoTrain) {
         enableAutoTrain = autoTrain;
