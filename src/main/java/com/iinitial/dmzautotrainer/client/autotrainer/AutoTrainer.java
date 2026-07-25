@@ -10,18 +10,26 @@ import net.minecraft.client.Minecraft;
 public class AutoTrainer {
     private static boolean repeating = false;
     private static boolean wasAutoTrainerEnabled = false;
-    private static Class<? extends BaseMinigameScreen> repeatingScreenClass = null;
     private static boolean pendingRestart = false;
+    private static Class<? extends BaseMinigameScreen> repeatingScreenClass = null;
 
     public static void globalTick(Minecraft mc) {
         ClientConfig config = ConfigManager.client();
         if (!config.isAutoTrainEnabled()) {
+            if (wasAutoTrainerEnabled) {
+                ClientSessionState.endSessionEarly();
+            }
+            wasAutoTrainerEnabled = false;
             repeating = false;
             pendingRestart = false;
             return;
         }
+        wasAutoTrainerEnabled = true;
 
         if (mc.screen instanceof BaseMinigameScreen screen) {
+            if (!ClientSessionState.mayTrain()) {
+                return;
+            }
             tick(screen, config);
         } else if (pendingRestart) {
             pendingRestart = false;
