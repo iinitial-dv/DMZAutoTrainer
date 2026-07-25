@@ -34,7 +34,7 @@ public final class TrainingSessionManager {
         }
 
         if (times != null && times.sessionEndsAt() > 0L) {
-            long cooldownEndsAt = times.sessionEndsAt() + cooldownMillis;
+            long cooldownEndsAt = now + cooldownMillis;
             if (now < cooldownEndsAt) {
                 data.put(playerId, new PlayerSessionTimes(0L, cooldownEndsAt));
                 return coolingDown(cooldownEndsAt, now);

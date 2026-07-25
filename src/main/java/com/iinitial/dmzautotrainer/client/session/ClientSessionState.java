@@ -39,10 +39,9 @@ public final class ClientSessionState {
     }
 
     public static void endSessionEarly() {
-        if (!allowed && !awaitingServerResponse) {
+        if (awaitingServerResponse) {
             return;
         }
-
         allowed = false;
         awaitingServerResponse = true;
         NetworkHandler.CHANNEL.sendToServer(new EndTrainingSessionC2SPacket());

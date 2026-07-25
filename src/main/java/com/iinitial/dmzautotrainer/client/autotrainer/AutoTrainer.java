@@ -29,12 +29,6 @@ public class AutoTrainer {
         wasAutoTrainerEnabled = true;
 
         if (mc.screen instanceof BaseMinigameScreen screen) {
-            if (!ClientSessionState.mayTrain()) {
-                return;
-            }
-            if (ClientSessionState.isSessionExpired()) {
-                sessionExpiredThisRun = true;
-            }
             tick(screen, config);
         } else if (sessionExpiredThisRun) {
             sessionExpiredThisRun = false;
@@ -60,7 +54,11 @@ public class AutoTrainer {
         String stage = ((Enum<?>) Reflect.get(screen, "stage")).name();
 
         switch (stage) {
-            case "READY" -> clickCenter(screen);
+            case "READY" -> {
+                if (ClientSessionState.mayTrain()) {
+                    clickCenter(screen);
+                }
+            }
             case "FINISHED" -> {
                 int levelsCleared = (int) Reflect.get(screen, "levelsCleared");
                 if (levelsCleared < config.getLevelsToComplete()) {
@@ -69,6 +67,9 @@ public class AutoTrainer {
                 clickCenter(screen);
             }
             case "PLAYING" -> {
+                if (!ClientSessionState.mayTrain()) {
+                    return;
+                }
                 if (ClientSessionState.isSessionExpired()) {
                     sessionExpiredThisRun = true;
                 }
