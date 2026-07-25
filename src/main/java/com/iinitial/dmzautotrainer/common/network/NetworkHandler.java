@@ -1,4 +1,4 @@
-package com.iinitial.dmzautotrainer.network;
+package com.iinitial.dmzautotrainer.common.network;
 
 import com.iinitial.dmzautotrainer.DMZAutoTrainer;
 import net.minecraft.resources.ResourceLocation;

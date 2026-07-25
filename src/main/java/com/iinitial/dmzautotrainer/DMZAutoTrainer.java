@@ -1,6 +1,6 @@
 package com.iinitial.dmzautotrainer;
 
-import com.iinitial.dmzautotrainer.network.NetworkHandler;
+import com.iinitial.dmzautotrainer.common.network.NetworkHandler;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLLoader;
 
