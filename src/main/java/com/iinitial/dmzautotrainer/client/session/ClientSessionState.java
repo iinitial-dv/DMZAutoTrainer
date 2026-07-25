@@ -31,8 +31,11 @@ public final class ClientSessionState {
 
     public static void requestFreshStatus() {
         allowed = false;
-        nextRequestAt = 0L;
-        requestStatusIfDue();
+        if (awaitingServerResponse) {
+            return;
+        }
+        awaitingServerResponse = true;
+        NetworkHandler.CHANNEL.sendToServer(new CheckTrainingStatusC2SPacket());
     }
 
     public static void endSessionEarly() {
