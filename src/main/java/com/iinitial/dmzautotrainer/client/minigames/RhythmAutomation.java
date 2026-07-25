@@ -2,8 +2,8 @@ package com.iinitial.dmzautotrainer.client.minigames;
 
 import com.dragonminez.client.gui.character.minigames.RythmGameScreen;
 import com.dragonminez.common.config.ConfigManager;
-import com.iinitial.dmzautotrainer.client.Reflect;
-import com.iinitial.dmzautotrainer.client.SpoofedInput;
+import com.iinitial.dmzautotrainer.client.autotrainer.Reflect;
+import com.iinitial.dmzautotrainer.client.autotrainer.SpoofedInput;
 
 import org.lwjgl.glfw.GLFW;
 import java.util.ArrayList;

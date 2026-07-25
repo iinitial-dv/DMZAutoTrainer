@@ -1,4 +1,4 @@
-package com.iinitial.dmzautotrainer.client;
+package com.iinitial.dmzautotrainer.client.autotrainer;
 
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;

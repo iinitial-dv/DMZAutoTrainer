@@ -1,7 +1,7 @@
 package com.iinitial.dmzautotrainer.client.minigames;
 
 import com.dragonminez.client.gui.character.minigames.MemoryGameScreen;
-import com.iinitial.dmzautotrainer.client.Reflect;
+import com.iinitial.dmzautotrainer.client.autotrainer.Reflect;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.List;

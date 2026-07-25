@@ -1,4 +1,4 @@
-package com.iinitial.dmzautotrainer.client;
+package com.iinitial.dmzautotrainer.client.autotrainer;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;

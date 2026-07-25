@@ -1,7 +1,7 @@
 package com.iinitial.dmzautotrainer.mixin.client;
 
 import com.dragonminez.client.gui.character.minigames.ControlGameScreen;
-import com.iinitial.dmzautotrainer.client.SpoofedInput;
+import com.iinitial.dmzautotrainer.client.autotrainer.SpoofedInput;
 import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

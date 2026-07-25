@@ -1,4 +1,4 @@
-package com.iinitial.dmzautotrainer.client;
+package com.iinitial.dmzautotrainer.client.autotrainer;
 
 import com.dragonminez.client.gui.character.minigames.*;
 import com.iinitial.dmzautotrainer.client.minigames.*;

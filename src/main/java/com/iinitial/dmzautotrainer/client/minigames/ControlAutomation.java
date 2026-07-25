@@ -1,7 +1,7 @@
 package com.iinitial.dmzautotrainer.client.minigames;
 
 import com.dragonminez.client.gui.character.minigames.ControlGameScreen;
-import com.iinitial.dmzautotrainer.client.Reflect;
+import com.iinitial.dmzautotrainer.client.autotrainer.Reflect;
 
 public class ControlAutomation {
     public static void tick(ControlGameScreen screen) {
