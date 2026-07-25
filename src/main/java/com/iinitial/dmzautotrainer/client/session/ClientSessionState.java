@@ -1,6 +1,7 @@
 package com.iinitial.dmzautotrainer.client.session;
 
 import com.iinitial.dmzautotrainer.common.network.NetworkHandler;
+import com.iinitial.dmzautotrainer.common.network.packet.CheckTrainingStatusC2SPacket;
 import com.iinitial.dmzautotrainer.common.network.packet.EndTrainingSessionC2SPacket;
 import com.iinitial.dmzautotrainer.common.network.packet.RequestTrainingSessionC2SPacket;
 import com.iinitial.dmzautotrainer.common.network.packet.SessionStatusS2CPacket;
@@ -74,7 +75,11 @@ public final class ClientSessionState {
     }
 
     public static void syncStatus() {
-        requestStatusIfDue();
+        if (awaitingServerResponse) {
+            return;
+        }
+        awaitingServerResponse = true;
+        NetworkHandler.CHANNEL.sendToServer(new CheckTrainingStatusC2SPacket());
     }
 
     private static void requestStatusIfDue() {

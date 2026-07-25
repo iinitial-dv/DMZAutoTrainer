@@ -64,14 +64,13 @@ public final class TrainingSessionManager {
         if (now < times.cooldownEndsAt()) {
             return coolingDown(times.cooldownEndsAt(), now);
         }
-        if (now >= times.sessionEndsAt()) {
+        if (times.sessionEndsAt() <= 0L) {
             return requestSession(server, playerId);
         }
 
         long sessionStartedAt = times.sessionEndsAt() - sessionDurationMillis;
         long timeInSession = Math.max(0L, Math.min(now - sessionStartedAt, sessionDurationMillis));
-        long proportionalCooldown = Math.round(
-                (timeInSession / (double) sessionDurationMillis) * cooldownMillis
+        long proportionalCooldown = Math.round((timeInSession / (double) sessionDurationMillis) * cooldownMillis
         );
 
         if (proportionalCooldown == 0L) {
@@ -125,6 +124,28 @@ public final class TrainingSessionManager {
             setCooldown(server, playerId, cooldownSeconds);
         }
         return playerIds.size();
+    }
+
+    public static SessionStatus checkStatus(MinecraftServer server, UUID playerId) {
+        ServerConfig config = ConfigManager.server();
+        if (!config.isSessionsEnabled()) {
+            return new SessionStatus(true, 0L, 0L);
+        }
+
+        long now = System.currentTimeMillis();
+        TrainingSessionSavedData data = TrainingSessionSavedData.get(server);
+        PlayerSessionTimes times = data.get(playerId);
+
+        if (times == null) {
+            return new SessionStatus(false, 0L, 0L);
+        }
+        if (now < times.cooldownEndsAt()) {
+            return new SessionStatus(false, 0L, Math.max(0L, (times.cooldownEndsAt() - now + 999L) / 1000L));
+        }
+        if (now < times.sessionEndsAt()) {
+            return new SessionStatus(true, Math.max(0L, (times.sessionEndsAt() - now + 999L) / 1000L), 0L);
+        }
+        return new SessionStatus(false, 0L, 0L);
     }
 
     private static SessionStatus allowedWithoutTimer() {

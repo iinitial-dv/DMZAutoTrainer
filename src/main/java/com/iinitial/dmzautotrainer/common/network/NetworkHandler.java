@@ -1,6 +1,7 @@
 package com.iinitial.dmzautotrainer.common.network;
 
 import com.iinitial.dmzautotrainer.DMZAutoTrainer;
+import com.iinitial.dmzautotrainer.common.network.packet.CheckTrainingStatusC2SPacket;
 import com.iinitial.dmzautotrainer.common.network.packet.EndTrainingSessionC2SPacket;
 import com.iinitial.dmzautotrainer.common.network.packet.RequestTrainingSessionC2SPacket;
 import com.iinitial.dmzautotrainer.common.network.packet.SessionStatusS2CPacket;
@@ -37,6 +38,11 @@ public class NetworkHandler {
                 .encoder(SessionStatusS2CPacket::encode)
                 .decoder(SessionStatusS2CPacket::decode)
                 .consumerMainThread(SessionStatusS2CPacket::handle)
+                .add();
+        CHANNEL.messageBuilder(CheckTrainingStatusC2SPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
+                .encoder(CheckTrainingStatusC2SPacket::encode)
+                .decoder(CheckTrainingStatusC2SPacket::decode)
+                .consumerMainThread(CheckTrainingStatusC2SPacket::handle)
                 .add();
     }
 }
