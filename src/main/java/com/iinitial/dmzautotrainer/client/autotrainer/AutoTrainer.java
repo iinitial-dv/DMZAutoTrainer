@@ -13,6 +13,9 @@ public class AutoTrainer {
     private static boolean pendingRestart = false;
     private static boolean sessionExpiredThisRun = false;
     private static Class<? extends BaseMinigameScreen> repeatingScreenClass = null;
+    private static BaseMinigameScreen evaluatedScreen = null;
+    private static boolean evaluationPending = false;
+    private static boolean automatingCurrentScreen = false;
 
     public static void globalTick(Minecraft mc) {
         ClientConfig config = ConfigManager.client();
@@ -24,27 +27,58 @@ public class AutoTrainer {
             repeating = false;
             pendingRestart = false;
             sessionExpiredThisRun = false;
+            evaluatedScreen = null;
+            evaluationPending = false;
+            automatingCurrentScreen = false;
             return;
         }
         wasAutoTrainerEnabled = true;
 
         if (mc.screen instanceof BaseMinigameScreen screen) {
-            tick(screen, config);
-        } else if (sessionExpiredThisRun) {
-            sessionExpiredThisRun = false;
-            pendingRestart = false;
-            repeating = false;
-            ClientSessionState.endSessionEarly();
-        } else if (pendingRestart) {
-            pendingRestart = false;
-            repeating = false;
-            if (ClientSessionState.mayTrain()) {
-                try {
-                    BaseMinigameScreen fresh = repeatingScreenClass.getDeclaredConstructor().newInstance();
-                    mc.setScreen(fresh);
-                    repeating = true;
-                } catch (Exception e) {
-                    throw new RuntimeException("Failed to restart minigame for repeat training", e);
+            if (screen != evaluatedScreen) {
+                evaluatedScreen = screen;
+                evaluationPending = true;
+                automatingCurrentScreen = false;
+                ClientSessionState.mayTrain();
+            }
+
+            if (evaluationPending) {
+                if (ClientSessionState.isAwaitingResponse()) {
+                    return;
+                }
+                evaluationPending = false;
+                automatingCurrentScreen = ClientSessionState.isAllowed();
+            }
+
+            if (automatingCurrentScreen) {
+                tick(screen, config);
+            } else {
+                ClientSessionState.mayTrain();
+            }
+        } else {
+            evaluatedScreen = null;
+            evaluationPending = false;
+            automatingCurrentScreen = false;
+
+            if (sessionExpiredThisRun) {
+                sessionExpiredThisRun = false;
+                pendingRestart = false;
+                repeating = false;
+                ClientSessionState.endSessionEarly();
+            } else if (pendingRestart) {
+                pendingRestart = false;
+                repeating = false;
+                if (ClientSessionState.mayTrain()) {
+                    try {
+                        BaseMinigameScreen fresh = repeatingScreenClass.getDeclaredConstructor().newInstance();
+                        mc.setScreen(fresh);
+                        repeating = true;
+                        evaluatedScreen = fresh;
+                        evaluationPending = false;
+                        automatingCurrentScreen = true;
+                    } catch (Exception e) {
+                        throw new RuntimeException("Failed to restart minigame for repeat training", e);
+                    }
                 }
             }
         }
@@ -54,11 +88,7 @@ public class AutoTrainer {
         String stage = ((Enum<?>) Reflect.get(screen, "stage")).name();
 
         switch (stage) {
-            case "READY" -> {
-                if (ClientSessionState.mayTrain()) {
-                    clickCenter(screen);
-                }
-            }
+            case "READY" -> clickCenter(screen);
             case "FINISHED" -> {
                 int levelsCleared = (int) Reflect.get(screen, "levelsCleared");
                 if (levelsCleared < config.getLevelsToComplete()) {
@@ -67,9 +97,7 @@ public class AutoTrainer {
                 clickCenter(screen);
             }
             case "PLAYING" -> {
-                if (!ClientSessionState.mayTrain()) {
-                    return;
-                }
+                ClientSessionState.notifyTrainingStarted();
                 if (ClientSessionState.isSessionExpired()) {
                     sessionExpiredThisRun = true;
                 }
