@@ -1,11 +1,14 @@
 package com.iinitial.dmzautotrainer.server;
 
 import com.iinitial.dmzautotrainer.DMZAutoTrainer;
-import com.iinitial.dmzautotrainer.server.command.CooldownCommand;
 import com.iinitial.dmzautotrainer.server.command.DmzTrainerCommand;
+import com.iinitial.dmzautotrainer.server.debug.SessionDebugTracker;
+import net.minecraft.server.MinecraftServer;
 import net.minecraftforge.event.RegisterCommandsEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.server.ServerLifecycleHooks;
 
 @Mod.EventBusSubscriber(modid = DMZAutoTrainer.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class ServerEvents {
