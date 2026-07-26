@@ -31,10 +31,11 @@ public class TrainingSessionSavedData extends SavedData {
         for (Tag entry : entries) {
             CompoundTag playerTag = (CompoundTag) entry;
             UUID uuid = playerTag.getUUID("uuid");
+            long sessionGrantedAt = playerTag.getLong("sessionGrantedAt");
             long sessionEndsAt = playerTag.getLong("sessionEndsAt");
             long cooldownEndsAt = playerTag.getLong("cooldownEndsAt");
 
-            data.players.put(uuid, new PlayerSessionTimes(sessionEndsAt, cooldownEndsAt));
+            data.players.put(uuid, new PlayerSessionTimes(sessionGrantedAt, sessionEndsAt, cooldownEndsAt));
         }
         return data;
     }
@@ -46,6 +47,7 @@ public class TrainingSessionSavedData extends SavedData {
         for (Map.Entry<UUID, PlayerSessionTimes> entry : players.entrySet()) {
             CompoundTag playerTag = new CompoundTag();
             playerTag.putUUID("uuid", entry.getKey());
+            playerTag.putLong("sessionGrantedAt", entry.getValue().sessionGrantedAt());
             playerTag.putLong("sessionEndsAt", entry.getValue().sessionEndsAt());
             playerTag.putLong("cooldownEndsAt", entry.getValue().cooldownEndsAt());
             entries.add(playerTag);
