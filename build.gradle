@@ -42,6 +42,7 @@ minecraft {
             workingDirectory project.file('run/client')
         }
         client2 {
+            parent runs.client
             workingDirectory project.file('run/client2')
         }
         server {
