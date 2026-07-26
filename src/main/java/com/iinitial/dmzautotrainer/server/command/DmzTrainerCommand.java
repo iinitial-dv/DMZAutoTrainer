@@ -14,6 +14,8 @@ import java.util.UUID;
 
 public final class CooldownCommand {
     private CooldownCommand() {
+public final class DmzTrainerCommand {
+    private DmzTrainerCommand() {
     }
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
