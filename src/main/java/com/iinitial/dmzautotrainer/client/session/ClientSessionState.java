@@ -1,10 +1,9 @@
 package com.iinitial.dmzautotrainer.client.session;
 
 import com.iinitial.dmzautotrainer.common.network.NetworkHandler;
-import com.iinitial.dmzautotrainer.common.network.packet.CheckTrainingStatusC2SPacket;
-import com.iinitial.dmzautotrainer.common.network.packet.EndTrainingSessionC2SPacket;
-import com.iinitial.dmzautotrainer.common.network.packet.RequestTrainingSessionC2SPacket;
 import com.iinitial.dmzautotrainer.common.network.packet.SessionStatusS2CPacket;
+import com.iinitial.dmzautotrainer.common.network.packet.TrainingSessionActionC2SPacket;
+import com.iinitial.dmzautotrainer.common.network.packet.TrainingSessionActionC2SPacket.Action;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -13,6 +12,7 @@ public final class ClientSessionState {
     private static boolean awaitingServerResponse;
     private static boolean sessionTimerActive = false;
     private static boolean allowed;
+    private static boolean trainingStartSent;
     private static long nextRequestAt;
     private static long sessionEndsAt;
     private static long cooldownEndsAt;
@@ -29,13 +29,21 @@ public final class ClientSessionState {
         return false;
     }
 
+    public static boolean isAllowed() {
+        return allowed;
+    }
+
+    public static boolean isAwaitingResponse() {
+        return awaitingServerResponse;
+    }
+
     public static void requestFreshStatus() {
         allowed = false;
         if (awaitingServerResponse) {
             return;
         }
         awaitingServerResponse = true;
-        NetworkHandler.CHANNEL.sendToServer(new CheckTrainingStatusC2SPacket());
+        send(Action.CHECK);
     }
 
     public static void endSessionEarly() {
@@ -44,7 +52,15 @@ public final class ClientSessionState {
         }
         allowed = false;
         awaitingServerResponse = true;
-        NetworkHandler.CHANNEL.sendToServer(new EndTrainingSessionC2SPacket());
+        send(Action.END);
+    }
+
+    public static void notifyTrainingStarted() {
+        if (trainingStartSent) {
+            return;
+        }
+        trainingStartSent = true;
+        send(Action.START);
     }
 
     public static void update(SessionStatusS2CPacket status) {
@@ -55,6 +71,10 @@ public final class ClientSessionState {
         sessionEndsAt = now + status.sessionSecondsRemaining() * 1_000L;
         cooldownEndsAt = now + status.cooldownSecondsRemaining() * 1_000L;
         nextRequestAt = allowed ? 0L : now + 1_000L;
+
+        if (!allowed) {
+            trainingStartSent = false;
+        }
     }
 
     public static boolean isSessionExpired() {
@@ -81,7 +101,7 @@ public final class ClientSessionState {
             return;
         }
         awaitingServerResponse = true;
-        NetworkHandler.CHANNEL.sendToServer(new CheckTrainingStatusC2SPacket());
+        send(Action.CHECK);
     }
 
     private static void requestStatusIfDue() {
@@ -91,7 +111,11 @@ public final class ClientSessionState {
         }
 
         awaitingServerResponse = true;
-        NetworkHandler.CHANNEL.sendToServer(new RequestTrainingSessionC2SPacket());
+        send(Action.REQUEST);
+    }
+
+    private static void send(Action action) {
+        NetworkHandler.CHANNEL.sendToServer(new TrainingSessionActionC2SPacket(action));
     }
 
     private static long secondsRemaining(long endsAt) {

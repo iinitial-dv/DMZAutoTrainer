@@ -1,10 +1,8 @@
 package com.iinitial.dmzautotrainer.common.network;
 
 import com.iinitial.dmzautotrainer.DMZAutoTrainer;
-import com.iinitial.dmzautotrainer.common.network.packet.CheckTrainingStatusC2SPacket;
-import com.iinitial.dmzautotrainer.common.network.packet.EndTrainingSessionC2SPacket;
-import com.iinitial.dmzautotrainer.common.network.packet.RequestTrainingSessionC2SPacket;
 import com.iinitial.dmzautotrainer.common.network.packet.SessionStatusS2CPacket;
+import com.iinitial.dmzautotrainer.common.network.packet.TrainingSessionActionC2SPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.NetworkDirection;
@@ -22,27 +20,16 @@ public class NetworkHandler {
             .simpleChannel();
 
     static {
-        CHANNEL.messageBuilder(RequestTrainingSessionC2SPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
-                .encoder(RequestTrainingSessionC2SPacket::encode)
-                .decoder(RequestTrainingSessionC2SPacket::decode)
-                .consumerMainThread(RequestTrainingSessionC2SPacket::handle)
-                .add();
-
-        CHANNEL.messageBuilder(EndTrainingSessionC2SPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
-                .encoder(EndTrainingSessionC2SPacket::encode)
-                .decoder(EndTrainingSessionC2SPacket::decode)
-                .consumerMainThread(EndTrainingSessionC2SPacket::handle)
+        CHANNEL.messageBuilder(TrainingSessionActionC2SPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
+                .encoder(TrainingSessionActionC2SPacket::encode)
+                .decoder(TrainingSessionActionC2SPacket::decode)
+                .consumerMainThread(TrainingSessionActionC2SPacket::handle)
                 .add();
 
         CHANNEL.messageBuilder(SessionStatusS2CPacket.class, packetId++, NetworkDirection.PLAY_TO_CLIENT)
                 .encoder(SessionStatusS2CPacket::encode)
                 .decoder(SessionStatusS2CPacket::decode)
                 .consumerMainThread(SessionStatusS2CPacket::handle)
-                .add();
-        CHANNEL.messageBuilder(CheckTrainingStatusC2SPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
-                .encoder(CheckTrainingStatusC2SPacket::encode)
-                .decoder(CheckTrainingStatusC2SPacket::decode)
-                .consumerMainThread(CheckTrainingStatusC2SPacket::handle)
                 .add();
     }
 }
