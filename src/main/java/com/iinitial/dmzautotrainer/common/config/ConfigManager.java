@@ -3,7 +3,9 @@ package com.iinitial.dmzautotrainer.common.config;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
+import com.mojang.logging.LogUtils;
 import net.minecraftforge.fml.loading.FMLPaths;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -12,6 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class ConfigManager {
+    private static final Logger LOGGER = LogUtils.getLogger();
     private final static Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
     private static ClientConfig clientConfig = new  ClientConfig();
     private static ServerConfig serverConfig =  new  ServerConfig();
@@ -49,6 +52,7 @@ public class ConfigManager {
                 return loaded !=  null ? loaded : defaultValues;
             }
         } catch (IOException | JsonSyntaxException e) {
+            LOGGER.error("Failed to load config from {}, falling back to defaults", file, e);
             return defaultValues;
         }
     }
@@ -60,7 +64,7 @@ public class ConfigManager {
                 GSON.toJson(config, writer);
             }
         } catch (IOException e) {
-
+            LOGGER.error("Failed to save config to {}", file, e);
         }
     }
 }
