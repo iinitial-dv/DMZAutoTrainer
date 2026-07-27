@@ -13,6 +13,7 @@ public final class ClientSessionState {
     private static boolean sessionTimerActive = false;
     private static boolean allowed;
     private static boolean trainingStartSent;
+    private static boolean sessionsEnabled = true;
     private static long nextRequestAt;
     private static long sessionEndsAt;
     private static long cooldownEndsAt;
@@ -31,6 +32,10 @@ public final class ClientSessionState {
 
     public static boolean isAllowed() {
         return allowed;
+    }
+
+    public static boolean isSessionsEnabled() {
+        return sessionsEnabled;
     }
 
     public static boolean isAwaitingResponse() {
@@ -67,6 +72,7 @@ public final class ClientSessionState {
         long now = System.currentTimeMillis();
         awaitingServerResponse = false;
         allowed = status.allowed();
+        sessionsEnabled = status.sessionsEnabled();
         sessionTimerActive = status.sessionSecondsRemaining() > 0L;
         sessionEndsAt = now + status.sessionSecondsRemaining() * 1_000L;
         cooldownEndsAt = now + status.cooldownSecondsRemaining() * 1_000L;

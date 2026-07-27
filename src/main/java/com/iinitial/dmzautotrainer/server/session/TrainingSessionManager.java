@@ -32,11 +32,11 @@ public final class TrainingSessionManager {
         }
 
         if (times != null && times.sessionGrantedAt() > 0L) {
-            return new SessionStatus(true, 0L, 0L);
+            return new SessionStatus(true, 0L, 0L, true);
         }
 
         data.put(playerId, new PlayerSessionTimes(now, 0L, 0L));
-        return new SessionStatus(true, 0L, 0L);
+        return new SessionStatus(true, 0L, 0L, true);
     }
 
     public static SessionStatus startSession(MinecraftServer server, UUID playerId) {
@@ -73,7 +73,7 @@ public final class TrainingSessionManager {
         PlayerSessionTimes times = data.get(playerId);
 
         if (times == null) {
-            return new SessionStatus(false, 0L, 0L);
+            return new SessionStatus(false, 0L, 0L, true);
         }
         if (now < times.cooldownEndsAt()) {
             return coolingDown(times.cooldownEndsAt(), now);
@@ -85,25 +85,25 @@ public final class TrainingSessionManager {
     public static SessionStatus checkStatus(MinecraftServer server, UUID playerId) {
         ServerConfig config = ConfigManager.server();
         if (!config.isSessionsEnabled()) {
-            return new SessionStatus(true, 0L, 0L);
+            return new SessionStatus(true, 0L, 0L, false);
         }
 
         long now = System.currentTimeMillis();
         PlayerSessionTimes times = TrainingSessionSavedData.get(server).get(playerId);
 
         if (times == null) {
-            return new SessionStatus(false, 0L, 0L);
+            return new SessionStatus(false, 0L, 0L, true);
         }
         if (now < times.cooldownEndsAt()) {
-            return new SessionStatus(false, 0L, secondsRemaining(times.cooldownEndsAt(), now));
+            return new SessionStatus(false, 0L, secondsRemaining(times.cooldownEndsAt(), now), true);
         }
         if (times.sessionEndsAt() > 0L && now < times.sessionEndsAt()) {
-            return new SessionStatus(true, secondsRemaining(times.sessionEndsAt(), now), 0L);
+            return new SessionStatus(true, secondsRemaining(times.sessionEndsAt(), now), 0L, true);
         }
         if (times.sessionGrantedAt() > 0L && times.sessionEndsAt() == 0L) {
-            return new SessionStatus(true, 0L, 0L);
+            return new SessionStatus(true, 0L, 0L, true);
         }
-        return new SessionStatus(false, 0L, 0L);
+        return new SessionStatus(false, 0L, 0L, true);
     }
 
     public static boolean resetCooldown(MinecraftServer server, UUID playerId) {
@@ -136,7 +136,7 @@ public final class TrainingSessionManager {
 
         if (times.sessionEndsAt() <= 0L) {
             data.remove(playerId);
-            return new SessionStatus(false, 0L, 0L);
+            return new SessionStatus(false, 0L, 0L, true);
         }
 
         long sessionDurationMillis = secondsToMillis(config.getSessionDuration());
@@ -148,7 +148,7 @@ public final class TrainingSessionManager {
 
         if (proportionalCooldown <= 0L) {
             data.remove(playerId);
-            return new SessionStatus(false, 0L, 0L);
+            return new SessionStatus(false, 0L, 0L, true);
         }
 
         long cooldownEndsAt = now + proportionalCooldown;
@@ -157,15 +157,15 @@ public final class TrainingSessionManager {
     }
 
     private static SessionStatus allowedWithoutTimer() {
-        return new SessionStatus(true, 0L, 0L);
+        return new SessionStatus(true, 0L, 0L, false);
     }
 
     private static SessionStatus activeSession(long sessionEndsAt, long now) {
-        return new SessionStatus(true, secondsRemaining(sessionEndsAt, now), 0L);
+        return new SessionStatus(true, secondsRemaining(sessionEndsAt, now), 0L, true);
     }
 
     private static SessionStatus coolingDown(long cooldownEndsAt, long now) {
-        return new SessionStatus(false, 0L, secondsRemaining(cooldownEndsAt, now));
+        return new SessionStatus(false, 0L, secondsRemaining(cooldownEndsAt, now), true);
     }
 
     private static long secondsToMillis(int seconds) {
