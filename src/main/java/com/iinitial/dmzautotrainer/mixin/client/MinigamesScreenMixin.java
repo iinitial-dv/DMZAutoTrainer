@@ -68,6 +68,8 @@ public abstract class MinigamesScreenMixin extends BaseMenuScreen {
 
     @Inject(method = "render", at = @At("TAIL"))
     private void renderCooldown(GuiGraphics graphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+        if (!ClientSessionState.isSessionsEnabled()) return;
+
         long cooldownSeconds = ClientSessionState.getCooldownSecondsRemaining();
 
         int leftOffset = this.getLeftPanelSwitchOffset(partialTick);
