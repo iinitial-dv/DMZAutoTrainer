@@ -9,7 +9,8 @@ The training itself is entirely client-side, meaning the server has no say in *h
 - **Auto Training** - automatically plays through whichever minigame you select next.
 - **Repeat Training** - once a configured number of levels in the minigame are cleared, it will automatically end the minigame and restart the same minigame, looping indefinitely until you stop it on your own.
 - **Levels to Complete Training** - set how many levels should be cleared per minigame run before the loop restarts.
-- **In-game settings screen** - a settings button is added into the Minigames tab so you don't need to touch a config file to toggle or change things.
+- **In-game settings screen** - a settings button is added into the Minigames tab so you don't need to touch a config file to toggle or change things. 
+- **Training sessions** - (disabled by default) cap how long you and others may train automatically per sitting and apply a cooldown.
 
 ### Supported minigames
 
@@ -44,9 +45,9 @@ Settings can be changed two ways:
 | `enableRepeatTraining` | `true` | Enables auto-completing and restarting a run after the level target is reached      |
 | `levelsToComplete` | `50` | Number of levels to clear before a run ends and (if repeat training is on) restarts |
 
-## Server
+## Server/Singleplayer
 
-### Server-Side Sessions (optional)
+### Training Sessions
 
 An earlier version of this mod was purely client-side, with nothing running on the server at all. That meant a server owner had no way to allow auto-training while also limiting the usage of it. Since this mod automates gameplay a server might reasonably want limited rather than banned outright, an optional server-side feature was added. Thanks goes to Kiziro for pointing out this issue. 
 
