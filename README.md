@@ -2,7 +2,7 @@
 
 A [Forge](https://minecraftforge.net/) mod that automates the training minigames in [DragonMineZ](https://www.curseforge.com/minecraft/mc-mods/dragon-mine-z), so you can grind Training Points without manually playing through the sometimes tedious minigames every time.
 
-The training itself is entirely client-side, meaning the server has no say in *how* you train. That being said, the mod does need to be installed on any server you want to use it on (see [Server-Side Sessions](#server-side-sessions-optional) below). 
+The training automation runs on your client, but the server decides whether you may use it at all. This mod is required on both the client and the server: a client carrying it cannot join a server without it, and a server carrying it will not admit a client without it. Client and server must also run the same version of the mod.
 
 ## Features
 
@@ -55,14 +55,23 @@ An earlier version of this mod was purely client-side, with nothing running on t
 
 | Option | Default | Description                                                                      |
 |---|---|----------------------------------------------------------------------------------|
+| `enableAutoTrainer` | `true` | Master switch. Set to `false` to disable auto training entirely on this server    |
 | `enableSessions` | `false` | Enables the session/cooldown system below                                        |
 | `sessionDuration` | `900` | How long (in seconds) a player may auto-train per session                        |
 | `sessionCooldown` | `900` | How long (in seconds) a player must wait after a session before starting another |
+
+The server config is read once when the server starts, so changes need a restart to take effect.
+
+When `enableAutoTrainer` is `false`, players still join normally and the Auto Train Settings button still appears in the Minigames tab, greyed out, with "Disabled on this server" shown above it. The auto trainer never runs and the server grants no training sessions.
 
 When enabled:
 - The training timer doesn't start counting down until a minigame is actually being played by the auto trainer.
 - Leaving the minigame early starts a cooldown proportional to how much of the session was actually used, instead of a full cooldown.
 - When a minigame is playing and the session timer runs out, the auto trainer will continue and finish the minigame, as it normally does, and will then start the cooldown.
+
+### What this switch does not do
+
+The automation itself runs on the client, and a server cannot observe a player clicking through a minigame. This switch asks the mod not to run and refuses to grant training sessions; it is not anti-cheat, and a modified build could ignore it. It is intended for honest players on servers whose owner has made a rule, not as an enforcement mechanism.
 
 ### Admin Commands
 
