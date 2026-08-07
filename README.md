@@ -41,7 +41,7 @@ Settings can be changed two ways:
 
 | Option | Default | Description                                                                         |
 |---|---|-------------------------------------------------------------------------------------|
-| `enableAutoTrainer` | `false` | Enables automation of the next played minigame                                      |
+| `enableAutoTrain` | `false` | Enables automation of the next played minigame                                      |
 | `enableRepeatTraining` | `true` | Enables auto-completing and restarting a run after the level target is reached      |
 | `levelsToComplete` | `50` | Number of levels to clear before a run ends and (if repeat training is on) restarts |
 
@@ -64,7 +64,7 @@ The server config is read once when the server starts, so changes need a restart
 
 When `enableAutoTrainer` is `false`, players still join normally and the Auto Train Settings button still appears in the Minigames tab, greyed out, with "Disabled on this server" shown above it. The auto trainer never runs and the server grants no training sessions.
 
-When enabled:
+When `enableSessions` is `true`:
 - The training timer doesn't start counting down until a minigame is actually being played by the auto trainer.
 - Leaving the minigame early starts a cooldown proportional to how much of the session was actually used, instead of a full cooldown.
 - When a minigame is playing and the session timer runs out, the auto trainer will continue and finish the minigame, as it normally does, and will then start the cooldown.

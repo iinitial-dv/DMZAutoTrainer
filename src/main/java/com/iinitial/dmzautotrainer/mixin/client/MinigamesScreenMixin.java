@@ -23,7 +23,6 @@ public abstract class MinigamesScreenMixin extends BaseMenuScreen {
     private static final int PANEL_HEIGHT = 213;
     private static final int BUTTON_WIDTH = 110;
     private static final int BUTTON_HEIGHT = 20;
-    private static final int DISABLED_TEXT_COLOR = 0xFFAAAAAA;
 
     private TexturedTextButton settingsButton;
 
@@ -51,10 +50,6 @@ public abstract class MinigamesScreenMixin extends BaseMenuScreen {
                 .textureSize(BUTTON_WIDTH, BUTTON_HEIGHT)
                 .message(Component.literal("Auto Train Settings"))
                 .onPress(button -> Minecraft.getInstance().setScreen(new SettingsScreen()));
-
-        if (!autoTrainerEnabled) {
-            builder.textColors(DISABLED_TEXT_COLOR, DISABLED_TEXT_COLOR);
-        }
 
         settingsButton = builder.build();
         settingsButton.active = autoTrainerEnabled;
