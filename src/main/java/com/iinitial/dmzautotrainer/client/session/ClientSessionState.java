@@ -14,6 +14,7 @@ public final class ClientSessionState {
     private static boolean allowed;
     private static boolean trainingStartSent;
     private static boolean sessionsEnabled = true;
+    private static boolean autoTrainerEnabled = false;
     private static long nextRequestAt;
     private static long sessionEndsAt;
     private static long cooldownEndsAt;
@@ -36,6 +37,30 @@ public final class ClientSessionState {
 
     public static boolean isSessionsEnabled() {
         return sessionsEnabled;
+    }
+
+    public static boolean isAutoTrainerEnabled() {
+        return autoTrainerEnabled;
+    }
+
+    public static void updatePolicy(boolean enabled) {
+        autoTrainerEnabled = enabled;
+    }
+
+    /**
+     * Clears every field back to its declared default. Called on disconnect: this class is a
+     * static holder, so without it one server's state leaks into the next connection.
+     */
+    public static void reset() {
+        autoTrainerEnabled = false;
+        sessionsEnabled = true;
+        allowed = false;
+        awaitingServerResponse = false;
+        trainingStartSent = false;
+        sessionTimerActive = false;
+        nextRequestAt = 0L;
+        sessionEndsAt = 0L;
+        cooldownEndsAt = 0L;
     }
 
     public static boolean isAwaitingResponse() {
