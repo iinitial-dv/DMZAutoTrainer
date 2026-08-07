@@ -18,18 +18,17 @@ public class AutoTrainer {
     private static boolean automatingCurrentScreen = false;
 
     public static void globalTick(Minecraft mc) {
+        if (!ClientSessionState.isAutoTrainerEnabled()) {
+            resetState();
+            return;
+        }
+
         ClientConfig config = ConfigManager.client();
         if (!config.isAutoTrainEnabled()) {
             if (wasAutoTrainerEnabled) {
                 ClientSessionState.endSessionEarly();
             }
-            wasAutoTrainerEnabled = false;
-            repeating = false;
-            pendingRestart = false;
-            sessionExpiredThisRun = false;
-            evaluatedScreen = null;
-            evaluationPending = false;
-            automatingCurrentScreen = false;
+            resetState();
             return;
         }
         wasAutoTrainerEnabled = true;
@@ -134,5 +133,15 @@ public class AutoTrainer {
 
     private static void clickCenter(BaseMinigameScreen screen) {
         screen.mouseClicked(screen.width / 2.0, screen.height / 2.0, 0);
+    }
+
+    private static void resetState() {
+        wasAutoTrainerEnabled = false;
+        repeating = false;
+        pendingRestart = false;
+        sessionExpiredThisRun = false;
+        evaluatedScreen = null;
+        evaluationPending = false;
+        automatingCurrentScreen = false;
     }
 }
