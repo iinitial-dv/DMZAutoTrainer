@@ -94,6 +94,9 @@ There's also a live debug toggle for server admins troubleshooting the session s
 
 This mod is built entirely on top of [DragonMineZ](https://dragonminez.com) ([GitHub](https://github.com/DragonMineZ/dragonminez)), created by Yuseix and ezShokkoh, with contributions from Bruno, Bati2ra, KyoSleep, JotaJoestar, and Toji71_. DragonMineZ is licensed under the [GNU General Public License v3.0](https://github.com/DragonMineZ/dragonminez/blob/main/LICENSE). See `CREDITS.txt` for full credits.
 
+## Contributors
+
+- [KiziroAkami](https://github.com/KiziroAkami) - Server-side auto trainer kill switch
 
 ## License
 
