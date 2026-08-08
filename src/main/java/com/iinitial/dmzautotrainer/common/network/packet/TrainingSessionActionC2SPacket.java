@@ -1,5 +1,6 @@
 package com.iinitial.dmzautotrainer.common.network.packet;
 
+import com.iinitial.dmzautotrainer.common.config.ConfigManager;
 import com.iinitial.dmzautotrainer.common.network.NetworkHandler;
 import com.iinitial.dmzautotrainer.server.session.SessionStatus;
 import com.iinitial.dmzautotrainer.server.session.TrainingSessionManager;
@@ -32,6 +33,15 @@ public record TrainingSessionActionC2SPacket(Action action) {
         ServerPlayer player = context.getSender();
 
         if (player != null) {
+            if (!ConfigManager.server().isAutoTrainerEnabled()) {
+                NetworkHandler.CHANNEL.send(
+                        PacketDistributor.PLAYER.with(() -> player),
+                        new SessionStatusS2CPacket(new SessionStatus(false, 0L, 0L, false))
+                );
+                context.setPacketHandled(true);
+                return;
+            }
+
             SessionStatus status = switch (message.action()) {
                 case REQUEST -> TrainingSessionManager.requestSession(player.server, player.getUUID());
                 case START -> TrainingSessionManager.startSession(player.server, player.getUUID());
