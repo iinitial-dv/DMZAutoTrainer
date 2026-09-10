@@ -14,9 +14,11 @@ public class AutoTrainer {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String TAG = "[DMZAT-DEBUG]";
 
+    private static final long PENDING_RESTART_TIMEOUT_MS = 5000L;
     private static boolean repeating = false;
     private static boolean wasAutoTrainerEnabled = false;
     private static boolean pendingRestart = false;
+    private static long pendingRestartDeadline = 0L;
     private static boolean sessionExpiredThisRun = false;
     private static Class<? extends BaseMinigameScreen> repeatingScreenClass = null;
     private static BaseMinigameScreen evaluatedScreen = null;
@@ -84,12 +86,25 @@ public class AutoTrainer {
                 repeating = false;
                 ClientSessionState.endSessionEarly();
             } else if (pendingRestart) {
+                if (ClientSessionState.isAwaitingResponse()) {
+                    if (System.currentTimeMillis() < pendingRestartDeadline) {
+                        // DEBUG LOGGING
+                        LOGGER.info("{} globalTick(): pendingRestart=true, off screen. Still awaitingServerResponse, within timeout window. Waiting.", TAG);
+                        return;
+                    }
+                    // DEBUG LOGGING
+                    LOGGER.warn("{} globalTick(): pendingRestart=true, off screen. TIMED OUT waiting for CHECK response " + "(> {}ms). Giving up on this restart - repeating and pendingRestart set false.", TAG, PENDING_RESTART_TIMEOUT_MS);
+                    pendingRestart = false;
+                    repeating = false;
+                    return;
+                }
+
                 pendingRestart = false;
                 repeating = false;
 
-                boolean canTrain = ClientSessionState.mayTrain();
+                boolean canTrain = ClientSessionState.isAllowed();
                 // DEBUG LOGGING
-                LOGGER.info("{} globalTick(): pendingRestart=true, off screen. mayTrain()={}. repeatingScreenClass={}", TAG, canTrain, repeatingScreenClass != null ? repeatingScreenClass.getSimpleName() : "null");
+                LOGGER.info("{} globalTick(): pendingRestart=true, off screen. Response resolved, isAllowed()={}. repeatingScreenClass={}", TAG, canTrain, repeatingScreenClass != null ? repeatingScreenClass.getSimpleName() : "null");
 
                 if (canTrain) {
                     try {
@@ -109,10 +124,7 @@ public class AutoTrainer {
                 }
                 // DEBUG LOGGING
                 else {
-                    // Most likely cause of the issue
-                    LOGGER.warn("{} globalTick(): pendingRestart consumed but mayTrain()=false on this tick. " +
-                            "repeating and pendingRestart are now BOTH false with no retry scheduled - " +
-                            "loop will not resume unless something else re-triggers mayTrain().", TAG);
+                    LOGGER.info("{} globalTick(): server denied restart (isAllowed()=false after response). Stopping repeat loop.", TAG);
                 }
             }
         }
@@ -150,6 +162,7 @@ public class AutoTrainer {
                         repeatingScreenClass = screen.getClass();
                         repeating = shouldLoop;
                         pendingRestart = shouldLoop;
+                        pendingRestartDeadline = System.currentTimeMillis() + PENDING_RESTART_TIMEOUT_MS;
                         ClientSessionState.requestFreshStatus();
                         Reflect.invoke(screen, "endGame");
                         return;
@@ -182,6 +195,7 @@ public class AutoTrainer {
         wasAutoTrainerEnabled = false;
         repeating = false;
         pendingRestart = false;
+        pendingRestartDeadline = 0L;
         sessionExpiredThisRun = false;
         evaluatedScreen = null;
         evaluationPending = false;
