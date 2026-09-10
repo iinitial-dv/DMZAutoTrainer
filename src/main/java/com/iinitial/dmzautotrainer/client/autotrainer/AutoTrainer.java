@@ -10,10 +10,9 @@ import net.minecraft.client.Minecraft;
 import org.slf4j.Logger;
 
 public class AutoTrainer {
-    // --- DEBUG LOGGING ADDED ---
+    // --- DEBUG LOGGING
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String TAG = "[DMZAT-DEBUG]";
-    // ----------------------------
 
     private static boolean repeating = false;
     private static boolean wasAutoTrainerEnabled = false;
