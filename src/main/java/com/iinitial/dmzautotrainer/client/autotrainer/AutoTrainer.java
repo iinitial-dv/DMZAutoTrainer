@@ -5,9 +5,16 @@ import com.iinitial.dmzautotrainer.client.minigames.*;
 import com.iinitial.dmzautotrainer.client.session.ClientSessionState;
 import com.iinitial.dmzautotrainer.common.config.ClientConfig;
 import com.iinitial.dmzautotrainer.common.config.ConfigManager;
+import com.mojang.logging.LogUtils;
 import net.minecraft.client.Minecraft;
+import org.slf4j.Logger;
 
 public class AutoTrainer {
+    // --- DEBUG LOGGING ADDED ---
+    private static final Logger LOGGER = LogUtils.getLogger();
+    private static final String TAG = "[DMZAT-DEBUG]";
+    // ----------------------------
+
     private static boolean repeating = false;
     private static boolean wasAutoTrainerEnabled = false;
     private static boolean pendingRestart = false;
@@ -26,6 +33,8 @@ public class AutoTrainer {
         ClientConfig config = ConfigManager.client();
         if (!config.isAutoTrainEnabled()) {
             if (wasAutoTrainerEnabled) {
+                // DEBUG LOGGING
+                LOGGER.info("{} globalTick(): enableAutoTrain toggled off mid-run. Calling endSessionEarly().", TAG);
                 ClientSessionState.endSessionEarly();
             }
             resetState();
@@ -35,6 +44,9 @@ public class AutoTrainer {
 
         if (mc.screen instanceof BaseMinigameScreen screen) {
             if (screen != evaluatedScreen) {
+                // DEBUG LOGGING
+                LOGGER.info("{} globalTick(): NEW screen detected ({}). Requesting mayTrain() evaluation.",
+                        TAG, screen.getClass().getSimpleName());
                 evaluatedScreen = screen;
                 evaluationPending = true;
                 automatingCurrentScreen = false;
@@ -43,10 +55,16 @@ public class AutoTrainer {
 
             if (evaluationPending) {
                 if (ClientSessionState.isAwaitingResponse()) {
+                    // DEBUG LOGGING
+                    if (System.currentTimeMillis() % 1000 < 50) {
+                        LOGGER.info("{} globalTick(): evaluationPending=true, still awaitingServerResponse. Blocked.", TAG);
+                    }
                     return;
                 }
                 evaluationPending = false;
                 automatingCurrentScreen = ClientSessionState.isAllowed();
+                // DEBUG LOGGING
+                LOGGER.info("{} globalTick(): evaluation resolved. automatingCurrentScreen={}", TAG, automatingCurrentScreen);
             }
 
             if (automatingCurrentScreen) {
@@ -60,6 +78,8 @@ public class AutoTrainer {
             automatingCurrentScreen = false;
 
             if (sessionExpiredThisRun) {
+                // DEBUG LOGGING
+                LOGGER.info("{} globalTick(): sessionExpiredThisRun=true, off the minigame screen. Ending session, repeating=false.", TAG);
                 sessionExpiredThisRun = false;
                 pendingRestart = false;
                 repeating = false;
@@ -67,7 +87,12 @@ public class AutoTrainer {
             } else if (pendingRestart) {
                 pendingRestart = false;
                 repeating = false;
-                if (ClientSessionState.mayTrain()) {
+
+                boolean canTrain = ClientSessionState.mayTrain();
+                // DEBUG LOGGING
+                LOGGER.info("{} globalTick(): pendingRestart=true, off screen. mayTrain()={}. repeatingScreenClass={}", TAG, canTrain, repeatingScreenClass != null ? repeatingScreenClass.getSimpleName() : "null");
+
+                if (canTrain) {
                     try {
                         BaseMinigameScreen fresh = repeatingScreenClass.getDeclaredConstructor().newInstance();
                         mc.setScreen(fresh);
@@ -75,9 +100,20 @@ public class AutoTrainer {
                         evaluatedScreen = fresh;
                         evaluationPending = false;
                         automatingCurrentScreen = true;
+                        // DEBUG LOGGING
+                        LOGGER.info("{} globalTick(): restart SUCCESS, new {} instantiated and set.", TAG, fresh.getClass().getSimpleName());
                     } catch (Exception e) {
+                        // DEBUG LOGGING
+                        LOGGER.error("{} globalTick(): restart FAILED to instantiate/set new screen. repeating stays false.", TAG, e);
                         throw new RuntimeException("Failed to restart minigame for repeat training", e);
                     }
+                }
+                // DEBUG LOGGING
+                else {
+                    // Most likely cause of the issue
+                    LOGGER.warn("{} globalTick(): pendingRestart consumed but mayTrain()=false on this tick. " +
+                            "repeating and pendingRestart are now BOTH false with no retry scheduled - " +
+                            "loop will not resume unless something else re-triggers mayTrain().", TAG);
                 }
             }
         }
@@ -90,7 +126,11 @@ public class AutoTrainer {
             case "READY" -> clickCenter(screen);
             case "FINISHED" -> {
                 int levelsCleared = (int) Reflect.get(screen, "levelsCleared");
+                // DEBUG LOGGING
+                LOGGER.info("{} tick(): stage=FINISHED. levelsCleared={}, levelsToComplete={}, repeating(before)={}", TAG, levelsCleared, config.getLevelsToComplete(), repeating);
                 if (levelsCleared < config.getLevelsToComplete()) {
+                    // DEBUG LOGGING
+                    LOGGER.info("{} tick(): levelsCleared < levelsToComplete -> forcing repeating=false.", TAG);
                     repeating = false;
                 }
                 clickCenter(screen);
@@ -98,12 +138,16 @@ public class AutoTrainer {
             case "PLAYING" -> {
                 ClientSessionState.notifyTrainingStarted();
                 if (ClientSessionState.isSessionExpired()) {
+                    // DEBUG LOGGING
+                    LOGGER.info("{} tick(): session expired mid-PLAYING. Flagging sessionExpiredThisRun=true.", TAG);
                     sessionExpiredThisRun = true;
                 }
                 if (config.isRepeatTrainingEnabled()) {
                     int levelsCleared = (int) Reflect.get(screen, "levelsCleared");
                     if (levelsCleared >= config.getLevelsToComplete()) {
                         boolean shouldLoop = !ClientSessionState.isSessionExpired();
+                        // DEBUG LOGGING
+                        LOGGER.info("{} tick(): quota reached ({} >= {}). shouldLoop={}. Ending game, requesting fresh status.", TAG, levelsCleared, config.getLevelsToComplete(), shouldLoop);
                         repeatingScreenClass = screen.getClass();
                         repeating = shouldLoop;
                         pendingRestart = shouldLoop;

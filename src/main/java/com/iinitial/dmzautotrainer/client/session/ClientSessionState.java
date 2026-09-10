@@ -4,11 +4,17 @@ import com.iinitial.dmzautotrainer.common.network.NetworkHandler;
 import com.iinitial.dmzautotrainer.common.network.packet.SessionStatusS2CPacket;
 import com.iinitial.dmzautotrainer.common.network.packet.TrainingSessionActionC2SPacket;
 import com.iinitial.dmzautotrainer.common.network.packet.TrainingSessionActionC2SPacket.Action;
+import com.mojang.logging.LogUtils;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.slf4j.Logger;
 
 @OnlyIn(Dist.CLIENT)
 public final class ClientSessionState {
+    // DEBUG LOGGING
+    private static final Logger LOGGER = LogUtils.getLogger();
+    private static final String TAG = "[DMZAT-DEBUG]";
+
     private static boolean awaitingServerResponse;
     private static boolean sessionTimerActive = false;
     private static boolean allowed;
@@ -52,6 +58,8 @@ public final class ClientSessionState {
      * static holder, so without it one server's state leaks into the next connection.
      */
     public static void reset() {
+        // DEBUG LOGGING
+        LOGGER.info("{} reset() called. Was: allowed={}, awaitingServerResponse={}, autoTrainerEnabled={}", TAG, allowed, awaitingServerResponse, autoTrainerEnabled);
         autoTrainerEnabled = false;
         sessionsEnabled = true;
         allowed = false;
@@ -70,16 +78,24 @@ public final class ClientSessionState {
     public static void requestFreshStatus() {
         allowed = false;
         if (awaitingServerResponse) {
+            // DEBUG LOGGING
+            LOGGER.info("{} requestFreshStatus() SKIPPED sending CHECK - awaitingServerResponse already true.", TAG);
             return;
         }
+        // DEBUG LOGGING
+        LOGGER.info("{} requestFreshStatus() sending Action.CHECK. Setting awaitingServerResponse=true.", TAG);
         awaitingServerResponse = true;
         send(Action.CHECK);
     }
 
     public static void endSessionEarly() {
         if (awaitingServerResponse) {
+            // DEBUG LOGGING
+            LOGGER.info("{} endSessionEarly() SKIPPED sending END - awaitingServerResponse already true.", TAG);
             return;
         }
+        // DEBUG LOGGING
+        LOGGER.info("{} endSessionEarly() sending Action.END. Setting awaitingServerResponse=true.", TAG);
         allowed = false;
         awaitingServerResponse = true;
         send(Action.END);
@@ -89,12 +105,18 @@ public final class ClientSessionState {
         if (trainingStartSent) {
             return;
         }
+        // DEBUG LOGGING
+        LOGGER.info("{} notifyTrainingStarted() sending Action.START (first time this run).", TAG);
         trainingStartSent = true;
         send(Action.START);
     }
 
     public static void update(SessionStatusS2CPacket status) {
         long now = System.currentTimeMillis();
+
+        // DEBUG LOGGING
+        LOGGER.info("{} update() RECEIVED response. allowed={}, sessionsEnabled={}, sessionSecondsRemaining={}, " + "cooldownSecondsRemaining={}. Was awaitingServerResponse={} before this call.", TAG, status.allowed(), status.sessionsEnabled(), status.sessionSecondsRemaining(), status.cooldownSecondsRemaining(), awaitingServerResponse);
+
         awaitingServerResponse = false;
         allowed = status.allowed();
         sessionsEnabled = status.sessionsEnabled();
@@ -106,6 +128,9 @@ public final class ClientSessionState {
         if (!allowed) {
             trainingStartSent = false;
         }
+
+        // DEBUG LOGGING
+        LOGGER.info("{} update() finished. allowed={}, awaitingServerResponse={}, nextRequestAt in {}ms", TAG, allowed, awaitingServerResponse, nextRequestAt - now);
     }
 
     public static boolean isSessionExpired() {
@@ -138,9 +163,19 @@ public final class ClientSessionState {
     private static void requestStatusIfDue() {
         long now = System.currentTimeMillis();
         if (awaitingServerResponse || now < nextRequestAt) {
+            // DEBUG LOGGING
+            // This is called from mayTrain(), which can be hit every client tick (20x/sec)
+            // while blocked, so it's throttled to roughly once per second to avoid flooding
+            // the log while still showing whether it's stuck waiting on a response
+            // vs. just waiting out the 1-second retry cooldown between requests.
+            if (now % 1000 < 50) {
+                LOGGER.info("{} requestStatusIfDue() SKIPPED. awaitingServerResponse={}, msUntilNextRequest={}", TAG, awaitingServerResponse, nextRequestAt - now);
+            }
             return;
         }
 
+        // DEBUG LOGGING
+        LOGGER.info("{} requestStatusIfDue() sending Action.REQUEST. Setting awaitingServerResponse=true.", TAG);
         awaitingServerResponse = true;
         send(Action.REQUEST);
     }
