@@ -2,7 +2,9 @@
 
 A [Forge](https://minecraftforge.net/) mod that automates the training minigames in [DragonMineZ](https://www.curseforge.com/minecraft/mc-mods/dragon-mine-z), so you can grind Training Points without manually playing through the sometimes tedious minigames every time.
 
-The training automation runs on your client, but the server decides whether you may use it at all. This mod is required on both the client and the server: a client carrying it cannot join a server without it, and a server carrying it will not admit a client without it. Client and server must also run the same version of the mod.
+This mod was previously client-sided, but due to multiple complaints, it is now required on any server for you to use it. The training itself runs on your client, but the server decides whether you may use it at all. Server owners may now allow or disable it, or limit it with training sessions and cooldowns. Any client carrying it cannot join a server without it, and a server carrying it will not admit a client without it. Client and server must also run the same version of the mod.
+
+For those of you who believe this should be a client-sided mod, you have to understand that some server owners have rules against macros. This mod happens to fall into that category. If you would like to use this mod on a server, contact its staff. I will not be reverting this mod back to client-sided.
 
 ## Features
 
