@@ -1,8 +1,8 @@
 package com.iinitial.dmzautotrainer.client.gui;
 
-import com.dragonminez.client.gui.buttons.CustomTextureButton;
-import com.dragonminez.client.gui.buttons.SwitchButton;
+import com.dragonminez.Reference;
 import com.dragonminez.client.gui.character.util.BaseMenuScreen;
+import com.dragonminez.client.gui.hud.HudRender;
 import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.init.MainSounds;
@@ -12,161 +12,59 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.util.Mth;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
 public class SettingsScreen extends BaseMenuScreen {
-    private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath("dragonminez", "textures/gui/menu/menubig.png");
-    private static final ResourceLocation STAT_BUTTONS = ResourceLocation.fromNamespaceAndPath("dragonminez", "textures/gui/buttons/characterbuttons.png");
-    private static final String[] SETTINGS = new String[]{"Auto Trainer", "Repeat Training", "Levels To Complete Training"};
-    private static final int SETTINGS_ITEM_HEIGHT = 20;
-    private static final int MAX_VISIBLE_SETTINGS = 7;
-    private int tickCount = 0;
-    private int scrollOffset = 0;
-    private int maxScroll = 0;
+    private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menubig.png");
+    private static final ResourceLocation STAT_BUTTONS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
+
+    private static final int ROW_HEIGHT = 20;
+    private static final int LIST_TOP = 35;
+    private static final int LIST_HEIGHT = 140;
+    private static final int LIST_CLIP_WIDTH = 131;
+    private static final float TEXT_SCALE = 0.75f;
+
+    private final ScrollbarState scrollBar = new ScrollbarState().step(ROW_HEIGHT).minThumb(20);
+    private final List<SettingsOption> settingsOptions = new ArrayList<>();
     private int holdTicks = 0;
     private int heldSettingIndex = -1;
     private int heldDelta = 0;
-    private final ScrollbarState scrollBar = new ScrollbarState();
-    private final List<SettingsOption> settingsOptions = new ArrayList<>();
-    private final List<CustomTextureButton> decreaseButtons = new ArrayList<>();
-    private final List<CustomTextureButton> increaseButtons = new ArrayList<>();
-    private final List<SwitchButton> switchButtons = new ArrayList<>();
 
-    public SettingsScreen () {
+    public SettingsScreen() {
         super(Component.literal("trainer settings"));
     }
 
+    @Override
     protected void init() {
         super.init();
         this.initializeSettingsOptions();
-        this.initSettingsButtons();
-        this.updateSettingsList();
     }
 
     private void initializeSettingsOptions() {
         this.settingsOptions.clear();
         ClientConfig config = ConfigManager.client();
-        this.settingsOptions.add(new SettingsScreen.SettingsOption("enableAutoTrainer", SettingsType.BOOLEAN, config.isAutoTrainEnabled() ? 1.0F : 0.0F, 0.0F, 1.0F, (v) -> config.setAutoTrain(v > 0.0F)));
-        this.settingsOptions.add(new SettingsScreen.SettingsOption("enableRepeatTraining", SettingsType.BOOLEAN, config.isRepeatTrainingEnabled() ? 1.0F : 0.0F, 0.0F, 1.0F, (v) -> config.setRepeatTraining(v > 0.0F)));
-        this.settingsOptions.add(new SettingsScreen.SettingsOption("levelsToComplete", SettingsType.INT, config.getLevelsToComplete(), 1, 100, config::setLevelsToComplete));
+        this.settingsOptions.add(new SettingsOption("Auto Trainer", SettingsType.BOOLEAN, config.isAutoTrainEnabled() ? 1.0F : 0.0F, 0.0F, 1.0F, v -> config.setAutoTrain(v > 0.0F)));
+        this.settingsOptions.add(new SettingsOption("Repeat Training", SettingsType.BOOLEAN, config.isRepeatTrainingEnabled() ? 1.0F : 0.0F, 0.0F, 1.0F, v -> config.setRepeatTraining(v > 0.0F)));
+        this.settingsOptions.add(new SettingsOption("Levels To Complete Training", SettingsType.INT, config.getLevelsToComplete(), 1, 100, config::setLevelsToComplete));
     }
 
-    private void initSettingsButtons() {
-        this.clearSettingsButtons();
-        LivingEntity player = this.minecraft.player;
-        int rightPanelX = this.getRightPanelX() - 5;
-        int centerY = this.getUiHeight() / 2;
-        int rightPanelY = centerY - 105;
-        int startY = rightPanelY + 35;
-        int visibleStart = this.scrollOffset;
-        int visibleEnd = Math.min(visibleStart + 7, this.settingsOptions.size());
-
-        for(int i = visibleStart; i < visibleEnd; ++i) {
-            SettingsScreen.SettingsOption option = this.settingsOptions.get(i);
-            int itemY = startY + (i - visibleStart) * 20;
-            if (option.type == SettingsScreen.SettingsType.BOOLEAN) {
-                boolean isOn = option.value > 0.0F;
-                int switchX = rightPanelX + 65;
-                int switchY = itemY + 3;
-                int finalI = i;
-                SwitchButton switchBtn = new SwitchButton(switchX, switchY, isOn, Component.empty(), (button) -> {
-                    this.modifySettingsValue(finalI, 1);
-                    ((SwitchButton)button).toggle();
-                    if (isOn) {
-                        player.playSound(MainSounds.SWITCH_OFF.get());
-                    } else {
-                        player.playSound(MainSounds.SWITCH_ON.get());
-                    }
-
-                });
-                this.switchButtons.add(switchBtn);
-                this.addRenderableWidget(switchBtn);
-            } else {
-                int finalI1 = i;
-                CustomTextureButton decreaseBtn = (new CustomTextureButton.Builder()).position(rightPanelX + 25, itemY + 3).size(14, 11).texture(STAT_BUTTONS).textureCoords(142, 0, 142, 10).textureSize(10, 10).onPress((button) -> {
-                    this.modifySettingsValue(finalI1, -1);
-                    this.heldSettingIndex = finalI1;
-                    this.heldDelta = -1;
-                    this.holdTicks = 0;
-                }).build();
-                this.decreaseButtons.add(decreaseBtn);
-                this.addRenderableWidget(decreaseBtn);
-                int finalI2 = i;
-                CustomTextureButton increaseBtn = (new CustomTextureButton.Builder()).position(rightPanelX + 108, itemY + 3).size(14, 11).texture(STAT_BUTTONS).textureCoords(0, 0, 0, 10).textureSize(10, 10).onPress((button) -> {
-                    this.modifySettingsValue(finalI2, 1);
-                    this.heldSettingIndex = finalI2;
-                    this.heldDelta = 1;
-                    this.holdTicks = 0;
-                }).build();
-                this.increaseButtons.add(increaseBtn);
-                this.addRenderableWidget(increaseBtn);
-            }
-        }
-
-    }
-
-    private void clearSettingsButtons() {
-        for(CustomTextureButton btn : this.decreaseButtons) {
-            this.removeWidget(btn);
-        }
-
-        for(CustomTextureButton btn : this.increaseButtons) {
-            this.removeWidget(btn);
-        }
-
-        for(SwitchButton btn : this.switchButtons) {
-            this.removeWidget(btn);
-        }
-
-        this.decreaseButtons.clear();
-        this.increaseButtons.clear();
-        this.switchButtons.clear();
-    }
-
+    @Override
     public void tick() {
         super.tick();
-        ++this.tickCount;
         if (this.heldSettingIndex != -1) {
             ++this.holdTicks;
             if (this.holdTicks > 10 && this.holdTicks % 2 == 0) {
                 this.modifySettingsValue(this.heldSettingIndex, this.heldDelta);
             }
         }
-    }
-
-    private void updateSettingsList() {
-        this.maxScroll = Math.max(0, this.settingsOptions.size() - 7);
-    }
-
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        if (this.isNotAnimating()) {
-            this.renderBackground(graphics);
-        }
-
-        int uiMouseX = (int)Math.round(this.toUiX((double)mouseX));
-        int uiMouseY = (int)Math.round(this.toUiY((double)mouseY));
-        this.beginUiScale(graphics);
-        this.applyZoom(graphics, partialTick);
-
-        int leftOffset = this.getLeftPanelSwitchOffset(partialTick);
-        graphics.pose().pushPose();
-        graphics.pose().translate((float)leftOffset, 0.0F, 0.0F);
-        this.renderLeftPanel(graphics, uiMouseX - leftOffset, uiMouseY);
-        graphics.pose().popPose();
-        int rightOffset = this.getRightPanelSwitchOffset(partialTick);
-        graphics.pose().pushPose();
-        graphics.pose().translate((float)rightOffset, 0.0F, 0.0F);
-        this.renderRightPanel(graphics, uiMouseX - rightOffset, uiMouseY);
-        graphics.pose().popPose();
-
-        super.render(graphics, uiMouseX, uiMouseY, partialTick);
-        this.endUiScale(graphics);
     }
 
     private int getLeftPanelX() {
@@ -177,144 +75,224 @@ public class SettingsScreen extends BaseMenuScreen {
         return this.getUiWidth() / 2 + 2;
     }
 
-    private void renderLeftPanel(GuiGraphics graphics, int mouseX, int mouseY) {
-        int leftPanelX = this.getLeftPanelX();
-        int centerY = this.getUiHeight() / 2;
-        int leftPanelY = centerY - 105;
-
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        graphics.blit(MENU_BIG, leftPanelX, centerY - 105, 0.0F, 0.0F, 141, 213, 256, 256);
-        graphics.blit(MENU_BIG, leftPanelX + 17, centerY - 95, 142.0F, 22.0F, 107, 21, 256, 256);
-        TextUtil.drawCenteredStringWithBorder(graphics, this.font, this.tr("gui.dragonminez.config.options", new Object[0]).withStyle(ChatFormatting.BOLD), leftPanelX + 70, leftPanelY + 17, -10496);
-        this.renderSettingsList(graphics, leftPanelX, leftPanelY, mouseX, mouseY);
+    private int getPanelY() {
+        return this.getUiHeight() / 2 - 105;
     }
 
-    private void renderSettingsList(GuiGraphics graphics, int panelX, int panelY, int mouseX, int mouseY) {
-        int startY = panelY + 35;
-        int visibleStart = this.scrollOffset;
-        int visibleEnd = Math.min(visibleStart + 7, SETTINGS.length);
-        graphics.enableScissor(this.toScreenCoord((double)(panelX + 5)), this.toScreenCoord((double)startY), this.toScreenCoord((double)(panelX + 144)), this.toScreenCoord((double)(startY + 140)));
+    private int listTop() {
+        return this.getPanelY() + LIST_TOP;
+    }
+
+    private void updateLayout() {
+        int leftX = this.getLeftPanelX();
+        this.scrollBar.layout(leftX + 5, this.listTop(), LIST_CLIP_WIDTH, LIST_HEIGHT, this.settingsOptions.size() * ROW_HEIGHT).barAt(leftX + 128);
+    }
+
+    @Override
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        this.renderMenuBackground(graphics, partialTick);
+
+        int uiMouseX = (int) Math.round(this.toUiX(mouseX));
+        int uiMouseY = (int) Math.round(this.toUiY(mouseY));
+
+        this.updateLayout();
+        this.beginUiScale(graphics);
+
+        float leftOffset = this.getLeftPanelSwitchOffset(partialTick);
+        float rightOffset = this.getRightPanelSwitchOffset(partialTick);
+
         graphics.pose().pushPose();
-        graphics.pose().scale(0.75F, 0.75F, 0.75F);
-
-        for(int i = visibleStart; i < visibleEnd; ++i) {
-            String option = SETTINGS[i];
-            int itemY = startY + (i - visibleStart) * 20;
-            TextUtil.drawStringWithBorder(graphics, this.font, this.txt(option), (int)((float)(panelX + 15) / 0.75F), (int)((float)itemY / 0.75F) + 6, -1);
-        }
-
+        graphics.pose().translate(leftOffset, 0.0F, 0.0F);
+        this.renderLeftPanel(graphics, uiMouseX - Math.round(leftOffset), uiMouseY);
         graphics.pose().popPose();
-        graphics.disableScissor();
-        this.scrollBar.update(panelX + 128, 3, startY, 140, (float)this.maxScroll);
-        if (this.maxScroll > 0) {
-            int scrollBarX = panelX + 128;
-            int scrollBarHeight = 140;
-            int totalItems = SETTINGS.length;
-            graphics.fill(scrollBarX, startY, scrollBarX + 3, startY + scrollBarHeight, -13421773);
-            float scrollPercent = (float)this.scrollOffset / (float)this.maxScroll;
-            float visiblePercent = 7.0F / (float)totalItems;
-            int indicatorHeight = Math.max(20, (int)((float)scrollBarHeight * visiblePercent));
-            int indicatorY = startY + (int)((float)(scrollBarHeight - indicatorHeight) * scrollPercent);
-            graphics.fill(scrollBarX, indicatorY, scrollBarX + 3, indicatorY + indicatorHeight, -5592406);
-        }
 
+        graphics.pose().pushPose();
+        graphics.pose().translate(rightOffset, 0.0F, 0.0F);
+        this.renderRightPanel(graphics, uiMouseX - Math.round(rightOffset), uiMouseY);
+        graphics.pose().popPose();
+
+        super.render(graphics, uiMouseX, uiMouseY, partialTick);
+        this.endUiScale(graphics);
+    }
+
+    private void renderLeftPanel(GuiGraphics graphics, int mouseX, int mouseY) {
+        int panelX = this.getLeftPanelX();
+        int panelY = this.getPanelY();
+
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        blit(graphics, MENU_BIG, panelX, panelY, 0, 0, 141, 213);
+        blit(graphics, MENU_BIG, panelX + 17, panelY + 10, 142, 22, 107, 21);
+
+        TextUtil.drawCenteredStringWithBorder(graphics, this.font, this.tr("gui.dragonminez.config.options").withStyle(ChatFormatting.BOLD),
+                panelX + 70, panelY + 17, 0xFFFFD700);
+
+        int top = this.listTop();
+        this.scrollBar.beginClip(graphics, panelX + 5, LIST_CLIP_WIDTH, false);
+        for (int i = 0; i < this.settingsOptions.size(); ++i) {
+            float y = top + i * ROW_HEIGHT - this.scrollBar.scroll();
+            if (!this.scrollBar.isVisible(top + i * ROW_HEIGHT, ROW_HEIGHT)) continue;
+
+            boolean hovered = this.isRowHovered(i, mouseX, mouseY, panelX + 8, panelX + 126)
+                    || this.isRowHovered(i, mouseX + this.getLeftPanelX() - this.getRightPanelX(), mouseY, panelX + 8, panelX + 126);
+            if (hovered) HudRender.rect(graphics, panelX + 9, y, 117, ROW_HEIGHT - 1, 0x16FFFFFF);
+            this.drawScaledText(graphics, this.txt(this.settingsOptions.get(i).label), panelX + 15, y + 6, 0xFFFFFFFF, false);
+        }
+        this.scrollBar.endClip(graphics);
+        this.scrollBar.renderBar(graphics, mouseX, mouseY);
     }
 
     private void renderRightPanel(GuiGraphics graphics, int mouseX, int mouseY) {
-        int rightPanelX = this.getRightPanelX();
-        int centerY = this.getUiHeight() / 2;
-        int rightPanelY = centerY - 105;
+        int panelX = this.getRightPanelX();
+        int panelY = this.getPanelY();
+
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        graphics.blit(MENU_BIG, rightPanelX, centerY - 105, 0.0F, 0.0F, 141, 213, 256, 256);
-        graphics.blit(MENU_BIG, rightPanelX + 17, centerY - 95, 142.0F, 22.0F, 107, 21, 256, 256);
-        TextUtil.drawCenteredStringWithBorder(graphics, this.font, this.tr("gui.dragonminez.config.values", new Object[0]).withStyle(ChatFormatting.BOLD), rightPanelX + 70, rightPanelY + 17, -10496);
-        this.renderSettingsValues(graphics, rightPanelX, rightPanelY);
+        blit(graphics, MENU_BIG, panelX, panelY, 0, 0, 141, 213);
+        blit(graphics, MENU_BIG, panelX + 17, panelY + 10, 142, 22, 107, 21);
+
+        TextUtil.drawCenteredStringWithBorder(graphics, this.font, this.tr("gui.dragonminez.config.values").withStyle(ChatFormatting.BOLD),
+                panelX + 70, panelY + 17, 0xFFFFD700);
+
+        int top = this.listTop();
+        this.scrollBar.beginClip(graphics, panelX + 5, LIST_CLIP_WIDTH, false);
+        for (int i = 0; i < this.settingsOptions.size(); ++i) {
+            float y = top + i * ROW_HEIGHT - this.scrollBar.scroll();
+            if (!this.scrollBar.isVisible(top + i * ROW_HEIGHT, ROW_HEIGHT)) continue;
+
+            boolean hovered = this.isRowHovered(i, mouseX, mouseY, panelX + 8, panelX + 132)
+                    || this.isRowHovered(i, mouseX + this.getRightPanelX() - this.getLeftPanelX(), mouseY, panelX + 8, panelX + 132);
+            if (hovered) HudRender.rect(graphics, panelX + 15, y, 111, ROW_HEIGHT - 1, 0x16FFFFFF);
+            this.renderValue(graphics, this.settingsOptions.get(i), panelX, y, mouseX, mouseY, this.isInList(mouseY));
+        }
+        this.scrollBar.endClip(graphics);
     }
 
-    private void renderSettingsValues(GuiGraphics graphics, int panelX, int panelY) {
-        int startY = panelY + 35;
-        int visibleStart = this.scrollOffset;
-        int visibleEnd = Math.min(visibleStart + 7, SETTINGS.length);
-
-        for(int i = visibleStart; i < visibleEnd; ++i) {
-            SettingsOption option = (SettingsOption)this.settingsOptions.get(i);
-            int itemY = startY + (i - visibleStart) * 20;
-            if (option.type != SettingsType.BOOLEAN) {
-                String valueText;
-                valueText = String.valueOf((int)option.value);
-
-                graphics.pose().pushPose();
-                graphics.pose().scale(0.75F, 0.75F, 0.75F);
-                TextUtil.drawCenteredStringWithBorder(graphics, this.font, this.txt(valueText), (int)((float)(panelX + 69) / 0.75F), (int)((float)(itemY + 5) / 0.75F), -1);
-                graphics.pose().popPose();
-            }
+    private void renderValue(GuiGraphics graphics, SettingsOption option, int panelX, float y, int mouseX, int mouseY, boolean interactable) {
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        if (option.type == SettingsType.BOOLEAN) {
+            blit(graphics, STAT_BUTTONS, panelX + 60, y + 3, 122, option.value > 0.0F ? 0 : 10, 20, 10);
+            return;
         }
+
+        boolean overDecrease = interactable && inside(mouseX, mouseY, panelX + 20, y + 3, 14, 11);
+        boolean overIncrease = interactable && inside(mouseX, mouseY, panelX + 103, y + 3, 14, 11);
+        blit(graphics, STAT_BUTTONS, panelX + 20, y + 3, 142, overDecrease ? 10 : 0, 10, 10);
+        blit(graphics, STAT_BUTTONS, panelX + 103, y + 3, 0, overIncrease ? 10 : 0, 10, 10);
+        this.drawScaledText(graphics, this.txt(String.valueOf((int) option.value)), panelX + 69, y + 5, 0xFFFFFFFF, true);
+    }
+
+    private void drawScaledText(GuiGraphics graphics, Component text, float x, float y, int color, boolean centered) {
+        graphics.pose().pushPose();
+        graphics.pose().translate(x, y, 0.0F);
+        graphics.pose().scale(TEXT_SCALE, TEXT_SCALE, 1.0F);
+        if (centered) TextUtil.drawCenteredStringWithBorder(graphics, this.font, text, 0, 0, color);
+        else TextUtil.drawStringWithBorder(graphics, this.font, text, 0, 0, color);
+        graphics.pose().popPose();
+    }
+
+    private static boolean inside(double mouseX, double mouseY, float x, float y, float width, float height) {
+        return mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height;
+    }
+
+    private boolean isInList(double mouseY) {
+        int top = this.listTop();
+        return mouseY >= top && mouseY < top + LIST_HEIGHT;
+    }
+
+    private boolean isRowHovered(int index, double mouseX, double mouseY, int left, int right) {
+        if (mouseX < left || mouseX >= right || !this.isInList(mouseY)) return false;
+        float y = this.listTop() + index * ROW_HEIGHT - this.scrollBar.scroll();
+        return mouseY >= y && mouseY < y + ROW_HEIGHT;
+    }
+
+    private int rowAt(double mouseX, double mouseY) {
+        int leftX = this.getLeftPanelX();
+        int rightX = this.getRightPanelX();
+        for (int i = 0; i < this.settingsOptions.size(); ++i) {
+            if (this.isRowHovered(i, mouseX, mouseY, leftX + 8, leftX + 126) || this.isRowHovered(i, mouseX, mouseY, rightX + 8, rightX + 132)) return i;
+        }
+        return -1;
     }
 
     private void modifySettingsValue(int index, int delta) {
-        if (index >= 0 && index < this.settingsOptions.size()) {
-            SettingsScreen.SettingsOption option = (SettingsScreen.SettingsOption)this.settingsOptions.get(index);
-            boolean isShiftDown = Screen.hasShiftDown();
-            if (option.type == SettingsScreen.SettingsType.BOOLEAN) {
-                option.value = option.value > 0.0F ? 0.0F : 1.0F;
-            } else if (option.type == SettingsScreen.SettingsType.INT) {
-                int step = isShiftDown ? 5 : 1;
-                option.value = Math.max(option.min, Math.min(option.max, option.value + (float)(delta * step)));
-            }
+        if (index < 0 || index >= this.settingsOptions.size()) return;
 
-            option.setter.accept(option.value);
+        SettingsOption option = this.settingsOptions.get(index);
+        if (option.type == SettingsType.BOOLEAN) {
+            option.value = option.value > 0.0F ? 0.0F : 1.0F;
+        } else {
+            int step = Screen.hasShiftDown() ? 5 : 1;
+            option.value = Mth.clamp(option.value + delta * step, option.min, option.max);
         }
+        option.setter.accept(option.value);
     }
 
+    private void playUi(SoundEvent sound) {
+        if (this.minecraft != null) this.minecraft.getSoundManager().play(SimpleSoundInstance.forUI(sound, 1.0F));
+    }
+
+    @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
         double uiMouseX = this.toUiX(mouseX);
         double uiMouseY = this.toUiY(mouseY);
-        int leftPanelX = this.getLeftPanelX();
-        int rightPanelX = this.getRightPanelX();
-        int centerY = this.getUiHeight() / 2;
-        int panelY = centerY - 105;
-        boolean overLeft = uiMouseX >= (double)leftPanelX && uiMouseX <= (double)(leftPanelX + 148);
-        boolean overRight = uiMouseX >= (double)rightPanelX && uiMouseX <= (double)(rightPanelX + 148);
-        if ((overLeft || overRight) && uiMouseY >= (double)(panelY + 40) && uiMouseY <= (double)(panelY + 219)) {
-            int scrollAmount = (int)Math.signum(delta);
-            this.scrollOffset = Math.max(0, Math.min(this.maxScroll, this.scrollOffset - scrollAmount));
-            this.initSettingsButtons();
+        int panelY = this.getPanelY();
+
+        boolean overPanels = uiMouseX >= this.getLeftPanelX() && uiMouseX <= this.getRightPanelX() + 141;
+        if (overPanels && uiMouseY >= panelY && uiMouseY <= panelY + 213) {
+            this.scrollBar.scrollWheel(delta);
             return true;
-        } else {
-            return super.mouseScrolled(mouseX, mouseY, delta);
         }
+        return super.mouseScrolled(mouseX, mouseY, delta);
     }
 
+    @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         double uiMouseX = this.toUiX(mouseX);
         double uiMouseY = this.toUiY(mouseY);
-        if (this.scrollBar.tryStartDrag(uiMouseX, uiMouseY)) {
-            this.scrollOffset = Math.round(this.scrollBar.scrollFor(uiMouseY));
-            this.initSettingsButtons();
-            return true;
-        } else {
-            return super.mouseClicked(mouseX, mouseY, button);
+
+        if (this.scrollBar.mouseClicked(uiMouseX, uiMouseY, button)) return true;
+
+        if (button == 0) {
+            int index = this.rowAt(uiMouseX, uiMouseY);
+            if (index >= 0 && this.handleRowClick(index, uiMouseX, uiMouseY)) return true;
         }
+        return super.mouseClicked(mouseX, mouseY, button);
     }
 
+    private boolean handleRowClick(int index, double mouseX, double mouseY) {
+        SettingsOption option = this.settingsOptions.get(index);
+        int panelX = this.getRightPanelX();
+        float y = this.listTop() + index * ROW_HEIGHT - this.scrollBar.scroll();
+
+        if (option.type == SettingsType.BOOLEAN) {
+            if (!inside(mouseX, mouseY, panelX + 56, y, 28, ROW_HEIGHT)) return false;
+            this.modifySettingsValue(index, 1);
+            this.playUi(option.value > 0.0F ? MainSounds.SWITCH_ON.get() : MainSounds.SWITCH_OFF.get());
+            return true;
+        }
+
+        int delta = inside(mouseX, mouseY, panelX + 18, y + 1, 18, 15) ? -1
+                : inside(mouseX, mouseY, panelX + 101, y + 1, 18, 15) ? 1 : 0;
+        if (delta == 0) return false;
+
+        this.playUi(MainSounds.UI_NAVE_COOLDOWN.get());
+        this.heldSettingIndex = index;
+        this.heldDelta = delta;
+        this.holdTicks = 0;
+        this.modifySettingsValue(index, delta);
+        return true;
+    }
+
+    @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        if (this.scrollBar.isDragging()) {
-            this.scrollOffset = Math.round(this.scrollBar.scrollFor(this.toUiY(mouseY)));
-            this.initSettingsButtons();
-            return true;
-        } else {
-            return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
-        }
+        if (this.scrollBar.mouseDragged(this.toUiX(mouseX), this.toUiY(mouseY))) return true;
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
     }
 
+    @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
         this.heldSettingIndex = -1;
-        if (this.scrollBar.isDragging()) {
-            this.scrollBar.stopDrag();
-            return true;
-        } else {
-            return super.mouseReleased(mouseX, mouseY, button);
-        }
+        if (this.scrollBar.mouseReleased()) return true;
+        return super.mouseReleased(mouseX, mouseY, button);
     }
 
     private enum SettingsType {
@@ -323,16 +301,15 @@ public class SettingsScreen extends BaseMenuScreen {
     }
 
     private static class SettingsOption {
-        String key;
-        SettingsType type;
+        final String label;
+        final SettingsType type;
+        final float min;
+        final float max;
+        final Consumer<Float> setter;
         float value;
-        float min;
-        float max;
-        Consumer<Float> setter;
-        Runnable action;
 
-        SettingsOption(String key, SettingsType type, float value, float min, float max, Consumer<Float> setter) {
-            this.key = key;
+        SettingsOption(String label, SettingsType type, float value, float min, float max, Consumer<Float> setter) {
+            this.label = label;
             this.type = type;
             this.value = value;
             this.min = min;
