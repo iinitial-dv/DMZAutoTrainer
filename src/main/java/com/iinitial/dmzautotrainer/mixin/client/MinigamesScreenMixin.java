@@ -30,20 +30,23 @@ public abstract class MinigamesScreenMixin extends BaseMenuScreen {
         super(title);
     }
 
+    private static int buttonBaseX() {
+        int panelCenterX = LEFT_PANEL_X + PANEL_WIDTH / 2;
+        return panelCenterX - BUTTON_WIDTH / 2;
+    }
+
     @Inject(method = "init", at = @At("TAIL"))
     private void addSettingsButton(CallbackInfo ci) {
         ClientSessionState.syncStatus();
 
-        int panelCenterX = LEFT_PANEL_X + PANEL_WIDTH / 2;
         int centerY = this.getUiHeight() / 2;
         int panelY = centerY - 105;
-        int bX = panelCenterX - BUTTON_WIDTH / 2;
         int bY = panelY + PANEL_HEIGHT - 30;
 
         boolean autoTrainerEnabled = ClientSessionState.isAutoTrainerEnabled();
 
         TexturedTextButton.Builder builder = new TexturedTextButton.Builder()
-                .position(bX, bY)
+                .position(buttonBaseX(), bY)
                 .size(BUTTON_WIDTH, BUTTON_HEIGHT)
                 .texture(SETTINGS_TEXTURE)
                 .textureCoords(0, 0, 0, 0)
@@ -61,12 +64,11 @@ public abstract class MinigamesScreenMixin extends BaseMenuScreen {
     private void slideSettingsButton(GuiGraphics graphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
         if (this.settingsButton == null) return;
 
-        int leftOffset = this.getLeftPanelSwitchOffset(partialTick);
-        int panelCenterX = LEFT_PANEL_X + PANEL_WIDTH / 2;
+        float leftOffset = this.getLeftPanelSwitchOffset(partialTick);
         int centerY = this.getUiHeight() / 2;
         int panelY = centerY - 105;
 
-        this.settingsButton.setX(panelCenterX - BUTTON_WIDTH / 2 + leftOffset);
+        slideX(this.settingsButton, buttonBaseX(), leftOffset);
         this.settingsButton.setY(panelY + PANEL_HEIGHT - 30);
     }
 
@@ -75,14 +77,15 @@ public abstract class MinigamesScreenMixin extends BaseMenuScreen {
         boolean autoTrainerEnabled = ClientSessionState.isAutoTrainerEnabled();
         if (autoTrainerEnabled && !ClientSessionState.isSessionsEnabled()) return;
 
-        int leftOffset = this.getLeftPanelSwitchOffset(partialTick);
+        float leftOffset = this.getLeftPanelSwitchOffset(partialTick);
         int panelCenterX = LEFT_PANEL_X + PANEL_WIDTH / 2;
         int centerY = this.getUiHeight() / 2;
         int panelY = centerY - 105;
 
-        this.beginUiScale(graphics);
+        float uiScale = this.getUiScale();
         graphics.pose().pushPose();
-        graphics.pose().translate((float) leftOffset, 0.0F, 0.0F);
+        graphics.pose().scale(uiScale, uiScale, 1.0F);
+        graphics.pose().translate(leftOffset, 0.0F, 0.0F);
 
         if (!autoTrainerEnabled) {
             TextUtil.drawCenteredStringWithBorder(
@@ -110,6 +113,5 @@ public abstract class MinigamesScreenMixin extends BaseMenuScreen {
         }
 
         graphics.pose().popPose();
-        this.endUiScale(graphics);
     }
 }
