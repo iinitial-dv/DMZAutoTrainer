@@ -1,12 +1,20 @@
 package com.iinitial.dmzautotrainer.client.autotrainer;
 
-import com.dragonminez.client.gui.character.minigames.*;
+import com.dragonminez.client.gui.character.minigames.BaseMinigameScreen;
+import com.dragonminez.client.gui.character.minigames.RythmGameScreen;
+import com.dragonminez.common.training.GravityLogic;
+import com.dragonminez.common.training.KiControlLogic;
+import com.dragonminez.common.training.MemoryLogic;
+import com.dragonminez.common.training.MinigameLogic;
+import com.dragonminez.common.training.PrecisionLogic;
+import com.dragonminez.common.training.RhythmLogic;
 import com.iinitial.dmzautotrainer.client.minigames.*;
 import com.iinitial.dmzautotrainer.client.session.ClientSessionState;
 import com.iinitial.dmzautotrainer.common.config.ClientConfig;
 import com.iinitial.dmzautotrainer.common.config.ConfigManager;
 import com.mojang.logging.LogUtils;
 import net.minecraft.client.Minecraft;
+import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 
 public class AutoTrainer {
@@ -15,18 +23,38 @@ public class AutoTrainer {
 
     private static final long PENDING_RESTART_RESPONSE_TIMEOUT_MS = 3000L;
     private static final long PENDING_RESTART_RETRY_DELAY_MS = 3000L;
+    private static final int MAX_CONSECUTIVE_REJECTS = 5;
 
+    private static Class<? extends BaseMinigameScreen> repeatingScreenClass = null;
+    private static BaseMinigameScreen evaluatedScreen = null;
+    private static ScreenInputSink sink = null;
     private static boolean repeating = false;
     private static boolean wasAutoTrainerEnabled = false;
     private static boolean pendingRestart = false;
+    private static boolean sessionExpiredThisRun = false;
+    private static boolean evaluationPending = false;
+    private static boolean automatingCurrentScreen = false;
+    private static boolean skipCurrentScreen = false;
+    private static boolean endRequested = false;
+    private static boolean rejectHandled = false;
+    private static boolean finishHandled = false;
+    private static boolean automatedEnd = false;
+    private static boolean userStopped = false;
+    private static boolean autoStartReady = false;
     private static long pendingRestartAttemptDeadline = 0L;
     private static long pendingRestartRetryAt = 0L;
     private static int pendingRestartCountdownLogged = -1;
-    private static boolean sessionExpiredThisRun = false;
-    private static Class<? extends BaseMinigameScreen> repeatingScreenClass = null;
-    private static BaseMinigameScreen evaluatedScreen = null;
-    private static boolean evaluationPending = false;
-    private static boolean automatingCurrentScreen = false;
+    private static int consecutiveRejects = 0;
+
+    public static boolean isAutomatedEnd() {
+        return automatedEnd;
+    }
+
+    public static void onUserStopped() {
+        userStopped = true;
+        repeating = false;
+        clearPendingRestart();
+    }
 
     public static void globalTick(Minecraft mc) {
         if (!ClientSessionState.isAutoTrainerEnabled()) {
@@ -46,10 +74,15 @@ public class AutoTrainer {
 
         if (mc.screen instanceof BaseMinigameScreen screen) {
             if (screen != evaluatedScreen) {
-                evaluatedScreen = screen;
-                evaluationPending = true;
-                automatingCurrentScreen = false;
-                ClientSessionState.mayTrain();
+                adopt(screen, false);
+                skipCurrentScreen = isChallenge(screen);
+                if (!skipCurrentScreen) {
+                    evaluationPending = true;
+                    ClientSessionState.mayTrain();
+                }
+            }
+            if (skipCurrentScreen) {
+                return;
             }
 
             if (evaluationPending) {
@@ -69,6 +102,8 @@ public class AutoTrainer {
             evaluatedScreen = null;
             evaluationPending = false;
             automatingCurrentScreen = false;
+            skipCurrentScreen = false;
+            sink = null;
 
             if (sessionExpiredThisRun) {
                 sessionExpiredThisRun = false;
@@ -79,6 +114,23 @@ public class AutoTrainer {
                 handlePendingRestart(mc);
             }
         }
+    }
+
+    private static void adopt(BaseMinigameScreen screen, boolean automating) {
+        userStopped = false;
+        autoStartReady = automating;
+        evaluatedScreen = screen;
+        evaluationPending = false;
+        automatingCurrentScreen = automating;
+        skipCurrentScreen = false;
+        endRequested = false;
+        rejectHandled = false;
+        finishHandled = false;
+        sink = new ScreenInputSink(screen);
+    }
+
+    private static boolean isChallenge(BaseMinigameScreen screen) {
+        return Reflect.get(screen, "challenge") != null;
     }
 
     private static void handlePendingRestart(Minecraft mc) {
@@ -113,9 +165,7 @@ public class AutoTrainer {
             try {
                 BaseMinigameScreen fresh = repeatingScreenClass.getDeclaredConstructor().newInstance();
                 mc.setScreen(fresh);
-                evaluatedScreen = fresh;
-                evaluationPending = false;
-                automatingCurrentScreen = true;
+                adopt(fresh, true);
             } catch (Exception e) {
                 throw new RuntimeException("Failed to restart minigame for repeat training", e);
             }
@@ -156,61 +206,113 @@ public class AutoTrainer {
         String stage = ((Enum<?>) Reflect.get(screen, "stage")).name();
 
         switch (stage) {
-            case "READY" -> clickCenter(screen);
+            case "READY" -> {
+                if (autoStartReady || !(screen instanceof RythmGameScreen)) {
+                    press(screen, GLFW.GLFW_KEY_ENTER);
+                }
+            }
             case "FINISHED" -> {
-                int levelsCleared = (int) Reflect.get(screen, "levelsCleared");
-                if (levelsCleared < config.getLevelsToComplete()) {
-                    repeating = false;
-                }
-                clickCenter(screen);
+                onFinished(screen, config);
+                press(screen, GLFW.GLFW_KEY_ENTER);
             }
-            case "PLAYING" -> {
-                ClientSessionState.notifyTrainingStarted();
-                if (ClientSessionState.isSessionExpired()) {
-                    sessionExpiredThisRun = true;
-                }
-                if (config.isRepeatTrainingEnabled()) {
-                    int levelsCleared = (int) Reflect.get(screen, "levelsCleared");
-                    if (levelsCleared >= config.getLevelsToComplete()) {
-                        boolean shouldLoop = !ClientSessionState.isSessionExpired();
-                        repeatingScreenClass = screen.getClass();
-                        repeating = shouldLoop;
-
-                        if (shouldLoop) {
-                            pendingRestart = true;
-                            pendingRestartAttemptDeadline = System.currentTimeMillis() + PENDING_RESTART_RESPONSE_TIMEOUT_MS;
-                            pendingRestartRetryAt = 0L;
-                            pendingRestartCountdownLogged = -1;
-                        } else {
-                            clearPendingRestart();
-                        }
-
-                        ClientSessionState.requestFreshStatus();
-                        Reflect.invoke(screen, "endGame");
-                        return;
-                    }
-                }
-                dispatch(screen);
-            }
+            case "REJECTED" -> onRejected(screen, config);
+            case "PLAYING" -> playing(screen, config);
+            default -> { }
         }
     }
 
-    private static void dispatch(BaseMinigameScreen screen) {
-        if (screen instanceof RythmGameScreen r) {
-            RhythmAutomation.tick(r);
-        } else if (screen instanceof GravityGameScreen g) {
-            GravityAutomation.tick(g);
-        } else if (screen instanceof PrecisionGameScreen p) {
-            PrecisionAutomation.tick(p);
-        } else if (screen instanceof MemoryGameScreen m) {
-            MemoryAutomation.tick(m);
-        } else if (screen instanceof ControlGameScreen c) {
-            ControlAutomation.tick(c);
+    private static void onFinished(BaseMinigameScreen screen, ClientConfig config) {
+        if (finishHandled) {
+            return;
+        }
+        finishHandled = true;
+
+        boolean restart = config.isRepeatTrainingEnabled() && !endRequested && !userStopped && !sessionExpiredThisRun;
+        if (restart) {
+            repeatingScreenClass = screen.getClass();
+            repeating = true;
+            pendingRestart = true;
+            pendingRestartAttemptDeadline = System.currentTimeMillis() + PENDING_RESTART_RESPONSE_TIMEOUT_MS;
+            pendingRestartRetryAt = 0L;
+            pendingRestartCountdownLogged = -1;
+            ClientSessionState.requestFreshStatus();
+        } else if (!endRequested) {
+            repeating = false;
+            clearPendingRestart();
         }
     }
 
-    private static void clickCenter(BaseMinigameScreen screen) {
-        screen.mouseClicked(screen.width / 2.0, screen.height / 2.0, 0);
+    private static void playing(BaseMinigameScreen screen, ClientConfig config) {
+        ClientSessionState.notifyTrainingStarted();
+        consecutiveRejects = 0;
+
+        MinigameLogic logic = (MinigameLogic) Reflect.get(screen, "logic");
+        if (logic == null || logic.isFinished()) {
+            return;
+        }
+
+        if (ClientSessionState.isSessionExpired()) {
+            sessionExpiredThisRun = true;
+            if (!isSong(logic) && !endRequested) {
+                clearPendingRestart();
+                repeating = false;
+                endRequested = true;
+                automatedEnd = true;
+                try {
+                    Reflect.invoke(screen, "endByPlayer");
+                } finally {
+                    automatedEnd = false;
+                }
+                return;
+            }
+        }
+
+        try {
+            sink.attach(logic);
+            dispatch(logic);
+        } catch (RuntimeException e) {
+            LOGGER.error("{} Automation failed", RETRY_TAG, e);
+            automatingCurrentScreen = false;
+        }
+    }
+
+    private static boolean isSong(MinigameLogic logic) {
+        return logic instanceof RhythmLogic rhythm && rhythm.chart() != null;
+    }
+
+    private static void onRejected(BaseMinigameScreen screen, ClientConfig config) {
+        if (!rejectHandled) {
+            rejectHandled = true;
+            if (repeating && config.isRepeatTrainingEnabled() && ++consecutiveRejects <= MAX_CONSECUTIVE_REJECTS) {
+                pendingRestart = true;
+                pendingRestartAttemptDeadline = 0L;
+                pendingRestartRetryAt = System.currentTimeMillis() + PENDING_RESTART_RETRY_DELAY_MS;
+                pendingRestartCountdownLogged = -1;
+            } else {
+                repeating = false;
+                clearPendingRestart();
+            }
+        }
+        press(screen, GLFW.GLFW_KEY_ENTER);
+    }
+
+    private static void press(BaseMinigameScreen screen, int keyCode) {
+        screen.keyPressed(keyCode, 0, 0);
+        screen.keyReleased(keyCode, 0, 0);
+    }
+
+    private static void dispatch(MinigameLogic logic) {
+        if (logic instanceof RhythmLogic r) {
+            RhythmAutomation.tick(r, sink);
+        } else if (logic instanceof GravityLogic g) {
+            GravityAutomation.tick(g, sink);
+        } else if (logic instanceof PrecisionLogic p) {
+            PrecisionAutomation.tick(p, sink);
+        } else if (logic instanceof MemoryLogic m) {
+            MemoryAutomation.tick(m, sink);
+        } else if (logic instanceof KiControlLogic c) {
+            ControlAutomation.tick(c, sink);
+        }
     }
 
     private static void resetState() {
@@ -221,5 +323,13 @@ public class AutoTrainer {
         evaluatedScreen = null;
         evaluationPending = false;
         automatingCurrentScreen = false;
+        skipCurrentScreen = false;
+        endRequested = false;
+        rejectHandled = false;
+        finishHandled = false;
+        userStopped = false;
+        autoStartReady = false;
+        consecutiveRejects = 0;
+        sink = null;
     }
 }
