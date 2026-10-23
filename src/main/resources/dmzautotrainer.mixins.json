@@ -6,9 +6,7 @@
   "refmap": "dmzautotrainer.refmap.json",
   "client": [
     "client.BaseMinigameScreenMixin",
-    "client.MinigamesScreenMixin",
-    "client.ControlGameScreenMixin",
-    "client.RythmGameScreenMixin"
+    "client.MinigamesScreenMixin"
   ],
   "mixins": [],
   "server": [],
