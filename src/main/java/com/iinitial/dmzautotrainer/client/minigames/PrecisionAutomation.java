@@ -1,33 +1,28 @@
 package com.iinitial.dmzautotrainer.client.minigames;
 
-import com.dragonminez.client.gui.character.minigames.PrecisionGameScreen;
-import com.dragonminez.common.config.ConfigManager;
-import com.iinitial.dmzautotrainer.client.autotrainer.Reflect;
+import com.dragonminez.common.config.TrainingConfig;
+import com.dragonminez.common.training.PrecisionLogic;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class PrecisionAutomation {
-    public static void tick(PrecisionGameScreen screen) {
-        List<?> liveTargets = (List<?>) Reflect.get(screen, "targets");
-        List<?> targets = new ArrayList<>(liveTargets);
+    public static void tick(PrecisionLogic precision, InputSink sink) {
+        if (precision.isFinished()) return;
 
-        var cfg = ConfigManager.getTrainingConfig().getPrecision();
-        int targetRadius = cfg.getTargetRadius();
-        int perfectWindow = cfg.getPerfectWindow();
+        TrainingConfig.PrecisionConfig cfg = precision.cfg();
+        double speed = precision.ringSpeed();
+        if (speed <= 0) return;
 
-        for (Object circle : targets) {
-            boolean fading = (boolean) Reflect.get(circle, "fading");
-            if (fading) continue;
+        List<PrecisionLogic.Circle> circles = new ArrayList<>(precision.targets());
+        for (PrecisionLogic.Circle circle : circles) {
+            if (circle.fading) continue;
 
-            float ringRadius = (float) Reflect.get(circle, "ringRadius");
-            float distance = Math.abs(ringRadius - targetRadius);
+            double remaining = circle.ringRadius - cfg.getTargetRadius();
+            if (remaining > speed) continue;
 
-            if (distance <= perfectWindow) {
-                int x = (int) Reflect.get(circle, "x");
-                int y = (int) Reflect.get(circle, "y");
-                screen.mouseClicked(x, y, 0);
-            }
+            float frac = (float) Math.max(0.0, Math.min(0.999, remaining / speed));
+            sink.click(circle.x, circle.y, frac);
         }
     }
 }
