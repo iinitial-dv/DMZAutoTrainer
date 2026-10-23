@@ -30,23 +30,20 @@ public abstract class MinigamesScreenMixin extends BaseMenuScreen {
         super(title);
     }
 
-    private static int buttonBaseX() {
-        int panelCenterX = LEFT_PANEL_X + PANEL_WIDTH / 2;
-        return panelCenterX - BUTTON_WIDTH / 2;
-    }
-
     @Inject(method = "init", at = @At("TAIL"))
     private void addSettingsButton(CallbackInfo ci) {
         ClientSessionState.syncStatus();
 
+        int panelCenterX = LEFT_PANEL_X + PANEL_WIDTH / 2;
         int centerY = this.getUiHeight() / 2;
         int panelY = centerY - 105;
+        int bX = panelCenterX - BUTTON_WIDTH / 2;
         int bY = panelY + PANEL_HEIGHT - 30;
 
         boolean autoTrainerEnabled = ClientSessionState.isAutoTrainerEnabled();
 
         TexturedTextButton.Builder builder = new TexturedTextButton.Builder()
-                .position(buttonBaseX(), bY)
+                .position(bX, bY)
                 .size(BUTTON_WIDTH, BUTTON_HEIGHT)
                 .texture(SETTINGS_TEXTURE)
                 .textureCoords(0, 0, 0, 0)
@@ -65,10 +62,11 @@ public abstract class MinigamesScreenMixin extends BaseMenuScreen {
         if (this.settingsButton == null) return;
 
         float leftOffset = this.getLeftPanelSwitchOffset(partialTick);
+        int panelCenterX = LEFT_PANEL_X + PANEL_WIDTH / 2;
         int centerY = this.getUiHeight() / 2;
         int panelY = centerY - 105;
 
-        slideX(this.settingsButton, buttonBaseX(), leftOffset);
+        slideX(this.settingsButton, panelCenterX - BUTTON_WIDTH / 2, leftOffset);
         this.settingsButton.setY(panelY + PANEL_HEIGHT - 30);
     }
 
@@ -82,9 +80,8 @@ public abstract class MinigamesScreenMixin extends BaseMenuScreen {
         int centerY = this.getUiHeight() / 2;
         int panelY = centerY - 105;
 
-        float uiScale = this.getUiScale();
+        this.beginUiScale(graphics);
         graphics.pose().pushPose();
-        graphics.pose().scale(uiScale, uiScale, 1.0F);
         graphics.pose().translate(leftOffset, 0.0F, 0.0F);
 
         if (!autoTrainerEnabled) {
@@ -113,5 +110,6 @@ public abstract class MinigamesScreenMixin extends BaseMenuScreen {
         }
 
         graphics.pose().popPose();
+        this.endUiScale(graphics);
     }
 }
