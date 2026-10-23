@@ -1,61 +1,47 @@
 package com.iinitial.dmzautotrainer.client.minigames;
 
-import com.dragonminez.client.gui.character.minigames.RythmGameScreen;
-import com.dragonminez.common.config.ConfigManager;
-import com.iinitial.dmzautotrainer.client.autotrainer.Reflect;
-import com.iinitial.dmzautotrainer.client.autotrainer.SpoofedInput;
+import com.dragonminez.common.training.RhythmLogic;
 
-import org.lwjgl.glfw.GLFW;
 import java.util.ArrayList;
 import java.util.List;
 
 public class RhythmAutomation {
-    public static void tick(RythmGameScreen screen) {
-        List<?> liveArrows = (List<?>) Reflect.get(screen, "arrows");
-        List<?> arrows = new ArrayList<>(liveArrows);
+    public static void tick(RhythmLogic rhythm, InputSink sink) {
+        if (rhythm.isFinished()) return;
 
-        int laneLeftX = (int) Reflect.get(screen, "laneLeftX");
-        int laneRightX = (int) Reflect.get(screen, "laneRightX");
+        double now = RhythmLogic.songTimeMs(rhythm.tickCount(), 0f);
+        double next = now + RhythmLogic.MS_PER_TICK;
+        List<RhythmLogic.Note> notes = new ArrayList<>(rhythm.notes());
 
-        var cfg = ConfigManager.getTrainingConfig().getRhythm();
-        int perfectWindow = cfg.getPerfectWindow();
-
-        for (Object note : arrows) {
-            boolean leftLane = (boolean) Reflect.get(note, "leftLane");
-            boolean activated = (boolean) Reflect.get(note, "activated");
-            boolean isHold = (boolean) Reflect.get(note, "isHold");
-            float x = (float) Reflect.get(note, "x");
-            String dir = ((Enum<?>) Reflect.get(note, "direction")).name();
-            int keyCode = arrowKeyFor(dir);
-            int targetX = leftLane ? laneLeftX : laneRightX;
-
-            if (!activated) {
-                if (Math.abs(x - targetX) <= perfectWindow) {
-                    screen.keyPressed(keyCode, 0, 0);
-                    screen.keyReleased(keyCode, 0, 0);
-
-                    if (isHold) {
-                        SpoofedInput.press(keyCode);
-                    }
-                }
+        boolean[] holding = new boolean[RhythmLogic.LANES];
+        for (RhythmLogic.Note note : notes) {
+            if (note.state != RhythmLogic.NoteState.HOLDING) continue;
+            double end = note.timeMs + note.lengthMs;
+            if (end < next) {
+                sink.key(note.lane, false, fraction(end, now));
             } else {
-                int holdRemaining = (int) Reflect.get(note, "holdRemaining");
-                if (holdRemaining > 0) {
-                    SpoofedInput.press(keyCode);
-                } else {
-                    SpoofedInput.release(keyCode);
-                }
+                holding[note.lane] = true;
             }
+        }
+
+        for (int lane = 0; lane < RhythmLogic.LANES; lane++) {
+            if (rhythm.isInputHeld(lane) && !holding[lane]) sink.key(lane, false, 0f);
+        }
+
+        if (rhythm.isResting()) return;
+
+        for (RhythmLogic.Note note : notes) {
+            if (note.state != RhythmLogic.NoteState.PENDING || note.timeMs >= next) continue;
+            if (rhythm.isInputHeld(note.lane)) continue;
+
+            float frac = fraction(note.timeMs, now);
+            sink.key(note.lane, true, frac);
+            if (note.lengthMs <= 0) sink.key(note.lane, false, frac);
         }
     }
 
-    private static int arrowKeyFor(String dir) {
-        return switch (dir) {
-            case "LEFT" -> GLFW.GLFW_KEY_LEFT;
-            case "RIGHT" -> GLFW.GLFW_KEY_RIGHT;
-            case "UP" -> GLFW.GLFW_KEY_UP;
-            case "DOWN" -> GLFW.GLFW_KEY_DOWN;
-            default -> throw new IllegalStateException(dir);
-        };
+    private static float fraction(double timeMs, double tickStartMs) {
+        double frac = (timeMs - tickStartMs) / RhythmLogic.MS_PER_TICK;
+        return (float) Math.max(0.0, Math.min(0.996, frac));
     }
 }
