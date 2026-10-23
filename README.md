@@ -9,8 +9,7 @@ For those of you who believe this should be a client-sided mod, you have to unde
 ## Features
 
 - **Auto Training** - automatically plays through whichever minigame you select next.
-- **Repeat Training** - once a configured number of levels in the minigame are cleared, it will automatically end the minigame and restart the same minigame, looping indefinitely until you stop it on your own.
-- **Levels to Complete Training** - set how many levels should be cleared per minigame run before the loop restarts.
+- **Repeat Training** - once a minigame has been completed, it will automatically end the minigame and restart that same minigame, looping indefinitely until you stop it on your own.
 - **In-game settings screen** - a settings button is added into the Minigames tab so you don't need to touch a config file to toggle or change things. 
 - **Training sessions** - (disabled by default) cap how long you and others may train automatically per sitting and apply a cooldown.
 
@@ -22,12 +21,16 @@ Rhythm, Gravity, Precision, Shadow Boxing, and Control
 
 - Minecraft **1.20.1**
 - Minecraft Forge **47.4.10** or newer
-- [DragonMineZ](https://www.curseforge.com/minecraft/mc-mods/dragon-mine-z) **2.1.3** (required dependency)
+- [DragonMineZ](https://www.curseforge.com/minecraft/mc-mods/dragon-mine-z) **2.2** (required dependency)
 
 ## Installation
 
+This mod is available on [Modrinth](https://modrinth.com/mod/dragonminez-auto-trainer) and [CurseForge](https://www.curseforge.com/minecraft/mc-mods/dragonmine-z-auto-trainer)
+
+## Manual Installation
+
 1. Install Minecraft Forge 47.4.10+ for Minecraft 1.20.1.
-2. Make sure DragonMineZ 2.1.3 is installed.
+2. Make sure DragonMineZ 2.2 is installed.
 3. Drop the mod jar into your `/mods` folder. 
 4. Launch the game.
 
@@ -45,7 +48,6 @@ Settings can be changed two ways:
 |---|---|-------------------------------------------------------------------------------------|
 | `enableAutoTrain` | `false` | Enables automation of the next played minigame                                      |
 | `enableRepeatTraining` | `true` | Enables auto-completing and restarting a run after the level target is reached      |
-| `levelsToComplete` | `50` | Number of levels to clear before a run ends and (if repeat training is on) restarts |
 
 ## Server/Singleplayer
 
