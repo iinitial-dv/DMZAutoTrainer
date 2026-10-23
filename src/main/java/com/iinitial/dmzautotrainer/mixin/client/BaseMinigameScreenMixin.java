@@ -2,6 +2,8 @@ package com.iinitial.dmzautotrainer.mixin.client;
 
 import com.dragonminez.client.gui.character.minigames.BaseMinigameScreen;
 import com.dragonminez.client.util.TextUtil;
+import com.iinitial.dmzautotrainer.client.autotrainer.AutoTrainer;
+import com.iinitial.dmzautotrainer.client.autotrainer.Reflect;
 import com.iinitial.dmzautotrainer.client.session.ClientSessionState;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -22,8 +24,25 @@ public abstract class BaseMinigameScreenMixin extends Screen {
     @Inject(method = "keyPressed", at = @At("HEAD"))
     private void endSessionWhenEscaping(int keyCode, int scanCode, int modifiers,
                                         CallbackInfoReturnable<Boolean> cir) {
-        if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+        if (keyCode != GLFW.GLFW_KEY_ESCAPE) {
+            return;
+        }
+        String stage = ((Enum<?>) Reflect.get((Object) this, "stage")).name();
+        switch (stage) {
+            case "READY", "CONNECTING", "PREPARING", "VERIFYING" -> {
+                ClientSessionState.endSessionEarly();
+                AutoTrainer.onUserStopped();
+            }
+            default -> {
+            }
+        }
+    }
+
+    @Inject(method = "endByPlayer", at = @At("HEAD"), remap = false)
+    private void endSessionWhenFinishing(CallbackInfo ci) {
+        if (!AutoTrainer.isAutomatedEnd()) {
             ClientSessionState.endSessionEarly();
+            AutoTrainer.onUserStopped();
         }
     }
 
