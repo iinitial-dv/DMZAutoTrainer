@@ -9,9 +9,9 @@ For those of you who believe this should be a client-sided mod, you have to unde
 ## Features
 
 - **Auto Training** - automatically plays through whichever minigame you select next.
-- **Repeat Training** - once a minigame has been completed, it will automatically end the minigame and restart that same minigame, looping indefinitely until you stop it on your own.
+- **Repeat Training** - once a minigame has been completed, it will automatically restart that same minigame, looping indefinitely until you stop it on your own.
 - **In-game settings screen** - a settings button is added into the Minigames tab so you don't need to touch a config file to toggle or change things. 
-- **Training sessions** - (disabled by default) cap how long you and others may train automatically per sitting and apply a cooldown.
+- **Training sessions** - (disabled by default) server-sided feature to cap how long you and others may train automatically per sitting, applying a cooldown afterward.
 
 ### Supported minigames
 
@@ -25,7 +25,7 @@ Rhythm, Gravity, Precision, Shadow Boxing, and Control
 
 ## Installation
 
-This mod is available on [Modrinth](https://modrinth.com/mod/dragonminez-auto-trainer) and [CurseForge](https://www.curseforge.com/minecraft/mc-mods/dragonmine-z-auto-trainer)
+This mod is available to download on [Modrinth](https://modrinth.com/mod/dragonminez-auto-trainer) and [CurseForge](https://www.curseforge.com/minecraft/mc-mods/dragonmine-z-auto-trainer)
 
 ## Manual Installation
 
@@ -75,7 +75,7 @@ When `enableSessions` is `true`:
 
 ### What this switch does not do
 
-The automation itself runs on the client, and a server cannot observe a player clicking through a minigame. This switch asks the mod not to run and refuses to grant training sessions; it is not anti-cheat, and a modified build could ignore it. It is intended for honest players on servers whose owner has made a rule, not as an enforcement mechanism.
+The automation itself runs on the client, and a server cannot observe a player clicking through a minigame. This switch asks the mod not to run and refuses to grant access to automatically training; it is not anti-cheat, and a modified build could ignore it. This is intended for honest players on servers whose owner has made a rule.
 
 ### Admin Commands
 
