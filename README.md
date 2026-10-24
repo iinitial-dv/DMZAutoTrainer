@@ -1,6 +1,6 @@
 # DragonMineZ: Auto Trainer
 
-A [Forge](https://minecraftforge.net/) mod that automates the training minigames in [DragonMineZ](https://www.curseforge.com/minecraft/mc-mods/dragon-mine-z), so you can grind Training Points without manually playing through the sometimes tedious minigames every time.
+A [Forge](https://minecraftforge.net/) mod that automates the training minigames in [DragonMineZ](https://www.curseforge.com/minecraft/mc-mods/dragonminez), so you can grind Training Points without manually playing through the sometimes tedious minigames every time.
 
 This mod was previously client-sided, but due to multiple complaints, it is now required on any server for you to use it. The training itself runs on your client, but the server decides whether you may use it at all. Server owners may now allow or disable it, or limit it with training sessions and cooldowns. Any client carrying it cannot join a server without it, and a server carrying it will not admit a client without it. Client and server must also run the same version of the mod.
 
