@@ -26,12 +26,12 @@ public class AutoTrainer {
     private static final int MAX_CONSECUTIVE_REJECTS = 5;
 
     private static Class<? extends BaseMinigameScreen> repeatingScreenClass = null;
-    private static BaseMinigameScreen evaluatedScreen = null;
     private static ScreenInputSink sink = null;
+    private static RhythmSelection.Choice rhythmChoice = null;
+    private static BaseMinigameScreen evaluatedScreen = null;
     private static boolean repeating = false;
     private static boolean wasAutoTrainerEnabled = false;
     private static boolean pendingRestart = false;
-    private static boolean sessionExpiredThisRun = false;
     private static boolean evaluationPending = false;
     private static boolean automatingCurrentScreen = false;
     private static boolean skipCurrentScreen = false;
@@ -41,6 +41,7 @@ public class AutoTrainer {
     private static boolean automatedEnd = false;
     private static boolean userStopped = false;
     private static boolean autoStartReady = false;
+    private static boolean sessionExpiredThisRun = false;
     private static long pendingRestartAttemptDeadline = 0L;
     private static long pendingRestartRetryAt = 0L;
     private static int pendingRestartCountdownLogged = -1;
@@ -119,6 +120,9 @@ public class AutoTrainer {
     private static void adopt(BaseMinigameScreen screen, boolean automating) {
         userStopped = false;
         autoStartReady = automating;
+        if (!automating) {
+            rhythmChoice = null;
+        }
         evaluatedScreen = screen;
         evaluationPending = false;
         automatingCurrentScreen = automating;
@@ -166,6 +170,11 @@ public class AutoTrainer {
                 BaseMinigameScreen fresh = repeatingScreenClass.getDeclaredConstructor().newInstance();
                 mc.setScreen(fresh);
                 adopt(fresh, true);
+                if (fresh instanceof RythmGameScreen && rhythmChoice != null && !RhythmSelection.restore(fresh, rhythmChoice)) {
+                    LOGGER.info("{} The chosen song is no longer available. Pick one to continue.", RETRY_TAG);
+                    autoStartReady = false;
+                    repeating = false;
+                }
             } catch (Exception e) {
                 throw new RuntimeException("Failed to restart minigame for repeat training", e);
             }
@@ -217,7 +226,7 @@ public class AutoTrainer {
             }
             case "REJECTED" -> onRejected(screen, config);
             case "PLAYING" -> playing(screen, config);
-            default -> { }
+            default -> {}
         }
     }
 
@@ -226,6 +235,7 @@ public class AutoTrainer {
             return;
         }
         finishHandled = true;
+        logRunEnd(screen);
 
         boolean restart = config.isRepeatTrainingEnabled() && !endRequested && !userStopped && !sessionExpiredThisRun;
         if (restart) {
@@ -251,6 +261,10 @@ public class AutoTrainer {
             return;
         }
 
+        if (screen instanceof RythmGameScreen && rhythmChoice == null) {
+            rhythmChoice = RhythmSelection.capture(screen);
+        }
+
         if (ClientSessionState.isSessionExpired()) {
             sessionExpiredThisRun = true;
             if (!isSong(logic) && !endRequested) {
@@ -271,7 +285,7 @@ public class AutoTrainer {
             sink.attach(logic);
             dispatch(logic);
         } catch (RuntimeException e) {
-            LOGGER.error("{} Automation failed", RETRY_TAG, e);
+            LOGGER.error("{} Automation failed, switching it off for this minigame", RETRY_TAG, e);
             automatingCurrentScreen = false;
         }
     }
@@ -280,9 +294,28 @@ public class AutoTrainer {
         return logic instanceof RhythmLogic rhythm && rhythm.chart() != null;
     }
 
+    private static void logRunEnd(BaseMinigameScreen screen) {
+        try {
+            MinigameLogic logic = (MinigameLogic) Reflect.get(screen, "logic");
+            Object verdict = Reflect.get(screen, "finalInfo");
+            String lives = logic instanceof GravityLogic gravity ? ", lives left " + gravity.lives() : "";
+            String server = verdict == null
+                    ? "no verdict from the server (unverified)"
+                    : "server verdict: invalid=" + Reflect.invoke(verdict, "isInvalid")
+                      + ", levels=" + Reflect.invoke(verdict, "getLevelsCleared")
+                      + ", seconds=" + (int) Reflect.invoke(verdict, "getTicksPlayed") / 20
+                      + ", TP=" + Reflect.invoke(verdict, "getTpEarned");
+            LOGGER.info("{} Run ended after {} local ticks, {} levels{}; {}", RETRY_TAG,
+                    logic == null ? -1 : logic.tickCount(), logic == null ? -1 : logic.levelsCleared(), lives, server);
+        } catch (RuntimeException e) {
+            LOGGER.info("{} Run ended (could not read the result: {})", RETRY_TAG, e.toString());
+        }
+    }
+
     private static void onRejected(BaseMinigameScreen screen, ClientConfig config) {
         if (!rejectHandled) {
             rejectHandled = true;
+            LOGGER.info("{} Start rejected: {}", RETRY_TAG, Reflect.get(screen, "rejectKey"));
             if (repeating && config.isRepeatTrainingEnabled() && ++consecutiveRejects <= MAX_CONSECUTIVE_REJECTS) {
                 pendingRestart = true;
                 pendingRestartAttemptDeadline = 0L;
@@ -330,6 +363,7 @@ public class AutoTrainer {
         userStopped = false;
         autoStartReady = false;
         consecutiveRejects = 0;
+        rhythmChoice = null;
         sink = null;
     }
 }
