@@ -44,10 +44,10 @@ Settings can be changed two ways:
 
 **Config file:** `config/dmzautotrainer-client.json`
 
-| Option | Default | Description                                                                         |
-|---|---|-------------------------------------------------------------------------------------|
-| `enableAutoTrain` | `false` | Enables automation of the next played minigame                                      |
-| `enableRepeatTraining` | `true` | Enables auto-completing and restarting a run after the level target is reached      |
+| Option | Default | Description                                                     |
+|---|---|-----------------------------------------------------------------|
+| `enableAutoTrain` | `false` | Enables automation of the next played minigame                  |
+| `enableRepeatTraining` | `true` | Enables the ability to restart a minigame once it has completed |
 
 ## Server/Singleplayer
 
